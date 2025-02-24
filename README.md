@@ -1,4 +1,4 @@
-# OpenAPIClient-php
+# VDSina-PHP-SDK OpenAPI client
 
 The data format of the incoming request and the returned data: JSON.
 All dates and timestamps are returned in the Europe/Moscow zone (the time zone in which the API server is located).
@@ -23,11 +23,11 @@ To install the bindings via [Composer](https://getcomposer.org/), add the follow
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/GIT_USER_ID/GIT_REPO_ID.git"
+      "url": "https://github.com/alexxxst/vdsina-php-sdk.git"
     }
   ],
   "require": {
-    "GIT_USER_ID/GIT_REPO_ID": "*@dev"
+    "alexxxst/vdsina-php-sdk": "*@dev"
   }
 }
 ```
