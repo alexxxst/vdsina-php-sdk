@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**type** | **string** |  |
+**type** | **string** | Schedule type |
 **left** | **int** | How many backups stays after rotation |
 **hour** | **int** | Hour for start, night time |
 **day** | **int** | Day of month |

@@ -4,15 +4,15 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | [optional]
-**name** | **string** |  | [optional]
-**full_name** | **string** |  | [optional]
-**created** | **\DateTime** |  | [optional]
-**updated** | **\DateTime** |  | [optional]
-**end** | **\DateTime** |  | [optional]
+**id** | **int** | Service ID | [optional]
+**name** | **string** | Service name | [optional]
+**full_name** | **string** | Service full name | [optional]
+**created** | **\DateTime** | Service create date | [optional]
+**updated** | **\DateTime** | Service update date | [optional]
+**end** | **\DateTime** | Service end date | [optional]
 **status** | [**\OpenAPI\Client\Model\ServiceStatus**](ServiceStatus.md) |  | [optional]
-**status_text** | **string** |  | [optional]
-**ip** | [**\OpenAPI\Client\Model\ServerServerIDGet200ResponseDataIpInner[]**](ServerServerIDGet200ResponseDataIpInner.md) |  | [optional]
+**status_text** | **string** | Service status description | [optional]
+**ip** | [**\OpenAPI\Client\Model\IPserviceIpInner[]**](IPserviceIpInner.md) |  | [optional]
 **server** | [**\OpenAPI\Client\Model\IPserviceServer**](IPserviceServer.md) |  | [optional]
 **datacenter** | [**\OpenAPI\Client\Model\Datacenter**](Datacenter.md) |  | [optional]
 **can** | [**\OpenAPI\Client\Model\ISOCan**](ISOCan.md) |  | [optional]

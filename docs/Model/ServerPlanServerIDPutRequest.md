@@ -8,5 +8,6 @@ Name | Type | Description | Notes
 **cpu** | **int** | New CPU count (when constructor tariff) | [optional]
 **ram** | **int** | New RAM amount in GB (when constructor tariff) | [optional]
 **disk** | **int** | New storage amount in GB, must not be smaller than current amount (when constructor tariff) | [optional]
+**gpu** | **int** | New GPU count (when constructor tariff) | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

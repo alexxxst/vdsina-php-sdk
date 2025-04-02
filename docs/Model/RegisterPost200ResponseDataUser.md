@@ -4,8 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | [optional]
-**name** | **string** |  | [optional]
-**token** | **string** |  | [optional]
+**id** | **int** | User ID | [optional]
+**name** | **string** | User login | [optional]
+**token** | **string** | API access token | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

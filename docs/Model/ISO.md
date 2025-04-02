@@ -4,16 +4,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **int** |  | [optional]
-**name** | **string** |  | [optional]
-**full_name** | **string** |  | [optional]
-**created** | **\DateTime** |  | [optional]
-**updated** | **\DateTime** |  | [optional]
-**end** | **\DateTime** |  | [optional]
+**id** | **int** | Service ID | [optional]
+**name** | **string** | Service name | [optional]
+**full_name** | **string** | Service full name | [optional]
+**created** | **\DateTime** | Service create date | [optional]
+**updated** | **\DateTime** | Service update date | [optional]
+**end** | **\DateTime** | Service end date | [optional]
 **status** | [**\OpenAPI\Client\Model\ServiceStatus**](ServiceStatus.md) |  | [optional]
-**status_text** | **string** |  | [optional]
+**status_text** | **string** | Service status description | [optional]
 **file** | [**\OpenAPI\Client\Model\ISOFile**](ISOFile.md) |  | [optional]
-**attached** | **bool** |  | [optional]
+**attached** | **bool** | Is ISO attached to any server or not | [optional]
 **server** | [**\OpenAPI\Client\Model\ISOServer**](ISOServer.md) |  | [optional]
 **can** | [**\OpenAPI\Client\Model\ISOCan**](ISOCan.md) |  | [optional]
 
