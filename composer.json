@@ -1,0 +1,16 @@
+{
+    "name": "vdsina/php-sdk",
+    "description": "Compact PHP SDK for VDSina public API",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.0.0",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "vdsina/sdk": "src/"
+        }
+    }
+}
