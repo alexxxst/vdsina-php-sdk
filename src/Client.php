@@ -66,7 +66,7 @@ final class Client
         }
 
         if ($httpCode >= 400 && $decoded === null) {
-            throw new RuntimeException('HTTP Error $httpCode: ' . $response);
+            throw new RuntimeException('HTTP Error ' . $httpCode . ': ' . $response);
         }
 
         return $decoded ?? [];
@@ -123,9 +123,9 @@ final class Client
         return $this->request('GET', '/iso');
     }
 
-    public function downloadIso(array $data): array
+    public function downloadIso(string $url): array
     {
-        return $this->request('POST', '/iso', [], $data);
+        return $this->request('POST', '/iso', [], ['url' => $url]);
     }
 
     public function checkIsoStatus(string $key): array
@@ -175,14 +175,14 @@ final class Client
         return $this->request('DELETE', '/server/' . $serverId);
     }
 
-    public function rebootServer(int $serverId): array
+    public function rebootServer(int $serverId, string $type = 'soft'): array
     {
-        return $this->request('PUT', '/server.reboot/' . $serverId);
+        return $this->request('PUT', '/server.reboot/' . $serverId, [], ['type' => $type]);
     }
 
-    public function reinstallServer(int $serverId): array
+    public function reinstallServer(int $serverId, array $data): array
     {
-        return $this->request('PUT', '/server.reinstall/' . $serverId);
+        return $this->request('PUT', '/server.reinstall/' . $serverId, [], $data);
     }
 
     public function getServerPassword(int $serverId): array
@@ -190,9 +190,9 @@ final class Client
         return $this->request('GET', '/server.password/' . $serverId);
     }
 
-    public function setServerPassword(int $serverId, array $data): array
+    public function setServerPassword(int $serverId, string $password): array
     {
-        return $this->request('PUT', '/server.password/' . $serverId, [], $data);
+        return $this->request('PUT', '/server.password/' . $serverId, [], ['password' => $password]);
     }
 
     public function changeServerPlan(int $serverId, array $data): array
@@ -205,9 +205,9 @@ final class Client
         return $this->request('PUT', '/server.prolong/' . $serverId);
     }
 
-    public function attachIso(int $serverId, array $data): array
+    public function attachIso(int $serverId, int $isoId): array
     {
-        return $this->request('PUT', '/server.iso/' . $serverId, [], $data);
+        return $this->request('PUT', '/server.iso/' . $serverId, [], ['iso' => $isoId]);
     }
 
     public function detachIso(int $serverId): array
@@ -347,9 +347,9 @@ final class Client
         return $this->request('PUT', '/backup.restore/' . $backupId, [], $data);
     }
 
-    public function copyBackup(int $backupId, array $data): array
+    public function copyBackup(int $backupId, int $datacenterId): array
     {
-        return $this->request('POST', '/backup.copy/' . $backupId, [], $data);
+        return $this->request('POST', '/backup.copy/' . $backupId, [], ['datacenter' => $datacenterId]);
     }
 
     public function getBackupSchedules(int $serviceId): array
@@ -390,7 +390,6 @@ final class Client
     {
         return $this->request('DELETE', '/operation/' . $operationId);
     }
-
 
     // --- Helpers ---
     public function getServerGroups(): array
