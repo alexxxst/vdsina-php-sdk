@@ -2,6 +2,8 @@
 
 A compact, lightweight PHP SDK for the [VDSina Public API](https://vdsina.com/tech/api).
 
+The data format of the incoming request and the returned data: JSON. All dates and timestamps are returned in the Europe/Moscow zone (the time zone in which the API server is located). A permanent authorization token can be obtained in the personal account in viewing the user's account information. The token changes when the user's password is changed. The token will have the same access rights as the specified user on whose behalf the token request was made. If you need to restrict actions for API requests, you need to create a separate user in the account with the necessary set of rights and make requests with this user's token.
+
 ## Features
 
 - Simple and direct integration.
@@ -11,9 +13,23 @@ A compact, lightweight PHP SDK for the [VDSina Public API](https://vdsina.com/te
 
 ## Installation
 
-```bash
-composer require vdsina/php-sdk
+To install the bindings via [Composer](https://getcomposer.org/), add the following to `composer.json`:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/alexxxst/vdsina-php-sdk.git"
+    }
+  ],
+  "require": {
+    "alexxxst/vdsina-php-sdk": "*@dev"
+  }
+}
 ```
+
+Then run `composer install`
 
 ## Usage
 
@@ -22,7 +38,7 @@ composer require vdsina/php-sdk
 ```php
 require 'vendor/autoload.php';
 
-use Vdsina\Sdk\Client;
+use vdsina\sdk\Client;
 
 $client = new Client(
     token: 'your_api_token_here',
