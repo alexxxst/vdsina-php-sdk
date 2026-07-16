@@ -390,4 +390,24 @@ final class Client
     {
         return $this->request('DELETE', '/operation/' . $operationId);
     }
+
+
+    // --- Helpers ---
+    public function getServerGroups(): array
+    {
+        return $this->request('GET', '/server-group');
+    }
+    public function getDatacenters(): array
+    {
+        return $this->request('GET', '/datacenter');
+    }
+    public function getTemplates(): array
+    {
+        return $this->request('GET', '/template');
+    }
+    public function getServerPlans(int $groupId): array
+    {
+        return $this->request('GET', '/server-plan/' . $groupId);
+    }
+
 }
