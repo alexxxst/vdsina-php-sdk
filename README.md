@@ -38,7 +38,7 @@ Then run `composer install`
 ```php
 require 'vendor/autoload.php';
 
-use vdsina\sdk\Client;
+use VDSina\Client;
 
 $client = new Client(
     token: 'your_api_token_here',

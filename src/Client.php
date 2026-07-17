@@ -1,6 +1,6 @@
 <?php
 
-namespace vdsina\sdk;
+namespace VDSina\Client;
 
 use JsonException;
 use RuntimeException;

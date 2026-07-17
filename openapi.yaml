@@ -1,0 +1,4421 @@
+openapi: 3.0.4
+
+info:
+  title: 'VDSina public API'
+  version: 1.2.3.2
+  contact:
+    name: 'Tech Support'
+    email: 'support@vdsina.com'
+  description: |
+    The data format of the incoming request and the returned data: JSON.
+    All dates and timestamps are returned in the Europe/Moscow zone (the time zone in which the API server is located).
+    A permanent authorization token can be obtained in the personal account in viewing the user's account information. The token changes when the user's password is changed.
+    The token will have the same access rights as the specified user on whose behalf the token request was made. If you need to restrict actions for API requests, you need to create a separate user in the account with the necessary set of rights and make requests with this user's token.
+    OpenAPI scheme: https://userapi.vdsina.com/openapi.yaml
+
+servers:
+  - url: 'https://userapi.vdsina.com/v1'
+    description: 'The public client API server'
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: string
+      description: 'API token gained from CP'
+  schemas:
+    '400':
+      description: '400 Bad Request'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Bad Request' }
+        description: { type: string, default: 'Additional error description' }
+        data:
+          type: object
+          nullable: true
+          description: 'Additional properties and their error descriptions'
+          properties:
+            generic:
+              type: array
+              items:
+                type: array
+                items:
+                  type: string
+                  example: 'Other generic errors'
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              example: 'Error for property'
+    '401':
+      description: '401 Unauthorized'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Unauthorized' }
+        description: { type: string, enum: [ 'Need autorization information', 'Incorrect token' ] }
+    '403':
+      description: '403 Forbidden'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, enum: [ 'Forbidden', 'Blacklisted' ] }
+        description: { type: string, enum: [ 'Incorrect credentials specified', 'The API requests limits were exceeded' ] }
+    '404':
+      description: '404 Not Found'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Not Found' }
+        description: { type: string, default: 'Additional error description' }
+    '405':
+      description: '405 Method Not Allowed'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Method Not Allowed' }
+        description: { type: string, default: 'Additional error description' }
+    '500':
+      description: '500 Internal Server Error'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Internal Server Error' }
+    '501':
+      description: '501 Not Implemented'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Not Implemented' }
+        description: { type: string, enum: [ 'Version not implemented', 'Action not implemented or not found' ] }
+    'Generic':
+      description: 'Other errors'
+      type: object
+      properties:
+        status: { type: string, default: 'error' }
+        status_msg: { type: string, default: 'Error title' }
+        description: { type: string, default: 'Additional error description' }
+        data:
+          type: object
+          nullable: true
+          description: 'Additional properties and their error descriptions'
+          additionalProperties:
+            { type: string, example: 'Some error' }
+    'ServiceStatus':
+      type: string
+      description: |
+        Service global statuses: 
+        * 'new' – ordered, but not yet created,
+        * 'active' – service is active and running,
+        * 'block' – blocked by the administration,
+        * 'notpaid' – service is blocked for non-payment,
+        * 'deleted' – the service has been deleted.
+        
+        In addition to the status, there may be an additional status in the status_text field.
+        It contains a description of the action that is being performed with service at the moment.
+      enum:
+        - 'new'
+        - 'active'
+        - 'block'
+        - 'notpaid'
+        - 'deleted'
+      example: 'active'
+    'ISO':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 12345, description: 'Service ID' }
+        name: { type: string, example: 'systemrescuecd-6.0.3.iso', description: 'Service name' }
+        full_name: { type: string, example: 'ISO #12345 – systemrescuecd-6.0.3.iso', description: 'Service full name' }
+        created: { type: string, format: date, description: 'Service create date' }
+        updated: { type: string, format: date, description: 'Service update date' }
+        end: { type: string, format: date, description: 'Service end date' }
+        status: { $ref: '#/components/schemas/ServiceStatus' }
+        status_text: { type: string, description: 'Service status description' }
+        file:
+          type: object
+          description: 'File information'
+          properties:
+            size: { type: string, example: '841 Mb', description: 'File size' }
+            md5: { type: string, example: '6ac22a9cbafdf20da92cba0f1b4e86b6', description: 'File MD5 checksum' }
+        attached: { type: boolean, example: true, description: 'Is ISO attached to any server or not' }
+        server:
+          type: object
+          nullable: true
+          description: 'Server ISO attached to'
+          properties:
+            id: { type: integer, example: 1234567, description: 'Server ID' }
+            name: { type: string, example: 'Server #1234567', description: 'Server name' }
+        can:
+          type: object
+          properties:
+            delete: { type: boolean, example: true, description: 'Ability to delete service' }
+    'IPservice':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 12345, description: 'Service ID' }
+        name: { type: string, example: 'IPv4 #12345', description: 'Service name' }
+        full_name: { type: string, example: 'IPv4 #12345', description: 'Service full name' }
+        created: { type: string, format: date, description: 'Service create date' }
+        updated: { type: string, format: date, description: 'Service update date' }
+        end: { type: string, format: date, description: 'Service end date' }
+        status: { $ref: '#/components/schemas/ServiceStatus' }
+        status_text: { type: string, description: 'Service status description' }
+        ip:
+          type: array
+          nullable: true
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/IPv4s'
+              - $ref: '#/components/schemas/IPv6s'
+            discriminator:
+              propertyName: 'ip.type'
+              mapping:
+                4: '#/components/schemas/IPv4s'
+                6: '#/components/schemas/IPv6s'
+        server:
+          type: object
+          properties:
+            id: { type: integer, example: 1234, description: 'Server ID' }
+            name: { type: string, example: 'Server #1234', description: 'Server name' }
+        datacenter: { $ref: '#/components/schemas/Datacenter' }
+        can:
+          type: object
+          properties:
+            delete: { type: boolean, example: true, description: 'Ability to delete service' }
+    'Backup':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 290230, description: 'Backup ID' }
+        name: { type: string, example: 'v283946.server', description: 'Backup name' }
+        full_name: { type: string, example: 'Backup #290230 – v283946.server (40 Gb)', description: 'Backup service name' }
+        created: { type: string, format: date, example: '2025-02-21 12:26:32', description: 'Service create date' }
+        updated: { type: string, format: date, example: '2025-02-21 12:28:24', description: 'Service update date' }
+        end: { type: string, format: date, example: '2025-02-22 12:28:23', description: 'Service end date' }
+        status: { $ref: '#/components/schemas/ServiceStatus' }
+        status_text: { type: string, example: 'Creation (9%) Processing', description: 'Service status description' }
+        datacenter: { $ref: '#/components/schemas/Datacenter' }
+        server:
+          type: object
+          nullable: true
+          description: 'Parent server data, when backup creating process is active (backup status new)'
+          properties:
+            id: { type: integer, example: 283946, description: 'Server ID' }
+            name: { type: string, example: 'v283946.server', description: 'Server name' }
+        can:
+          type: object
+          properties:
+            update: { type: boolean, example: true, description: 'Ability to update service' }
+            prolong: { type: boolean, example: false, description: 'Ability to prolong service' }
+            delete: { type: boolean, example: true, description: 'Ability to delete service' }
+    IPv4s:
+      type: object
+      nullable: true
+      description: 'IPv4'
+      properties:
+        id: { type: integer, example: 1234567, description: 'IP ID' }
+        ip: { type: string, format: ipv4, example: '91.84.101.78', description: 'IP address' }
+        type: { type: string, enum: [ '4' ], example: '4', description: 'IP type' }
+    IPv6s:
+      type: object
+      nullable: true
+      description: 'IPv6'
+      properties:
+        id: { type: integer, example: 1234568, description: 'IP ID' }
+        ip: { type: string, format: ipv6, example: '2a14:1e00:1:3f2::', description: 'IP address' }
+        type: { type: string, enum: [ '6' ], example: '6', description: 'IP type' }
+    IPv4p:
+      type: object
+      nullable: true
+      description: 'IPv4'
+      properties:
+        id: { type: integer, example: 1234567, description: 'IP ID' }
+        ip: { type: string, format: ipv4, example: '91.84.101.78', description: 'IP address' }
+        type: { type: string, enum: [ '4' ], example: '4', description: 'IP type' }
+        host: { type: string, format: hostname, example: 'hostname.com', description: 'IP PTR hosts' }
+        gateway: { type: string, format: ipv4, example: '91.84.101.1', description: 'IP gateway address' }
+        netmask: { type: string, format: ipv4, example: '255.255.255.0', description: 'IP netmask' }
+        datacenter: { $ref: '#/components/schemas/Datacenter' }
+        service:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer, example: 123479, description: 'Atached service ID' }
+            type: { type: string, enum: [ 'server', 'server-ip', 'reserve-ip', 'unknown' ], example: 'server', description: 'Service type' }
+            name: { type: string, example: 'IPv4 #123479', description: 'Service name' }
+        is_net: { type: boolean, example: false, description: 'Is network' }
+    IPv6p:
+      type: object
+      nullable: true
+      description: 'IPv6'
+      properties:
+        id: { type: integer, example: 1234568, description: 'IP ID' }
+        ip: { type: string, format: ipv6, example: '2a14:1e00:1:3f2::', description: 'IP address' }
+        type: { type: string, enum: [ '6' ], example: '6', description: 'IP type' }
+        host: { type: string, format: hostname, example: 'hostname.com', description: 'IP PTR hosts' }
+        gateway: { type: string, format: ipv6, example: 'fe80::1', description: 'IP gateway address' }
+        netmask: { type: string, example: '64', description: 'IP netmask' }
+        datacenter: { $ref: '#/components/schemas/Datacenter' }
+        service:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer, example: 123480, description: 'Attached service ID' }
+            type: { type: string, enum: [ 'server', 'server-ip', 'reserve-ip', 'unknown' ], example: 'server-ip', description: 'Service type' }
+            name: { type: string, example: 'IPv6 #123480', description: 'Service name' }
+        is_net: { type: boolean, example: true, description: 'Is network' }
+    'Datacenter':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 1, description: 'Datacenter ID' }
+        name: { type: string, example: 'Amsterdam 1, Netherlands', description: 'Datacenter name' }
+        country: { type: string, example: 'nl', description: 'Datacenter country' }
+    'Limit':
+      type: object
+      nullable: true
+      properties:
+        max: { type: integer, description: 'Maximum to order' }
+        now: { type: integer, description: 'Ordered now' }
+    'LimitChild':
+      type: object
+      nullable: true
+      properties:
+        max: { type: integer, description: 'Maximum to order' }
+        child_max: { type: integer, description: 'Maximum in parent service' }
+        now: { type: integer, description: 'Ordered now' }
+    'Tariff':
+      type: object
+      nullable: true
+      description: 'Tariff/server specifications'
+      properties:
+        cpu:
+          type: object
+          description: 'Count of CPUs included in this tariff plan or server'
+          properties:
+            value: { type: integer, example: 1 }
+            for: { type: string, default: 'core' }
+        ram:
+          type: object
+          description: 'Amount of RAM included in this tariff plan or server'
+          properties:
+            value: { type: number, example: 2 }
+            bytes: { type: integer, example: 2147483648 }
+            for: { type: string, default: 'Gb' }
+        disk:
+          type: object
+          description: 'Amount of storage included in this tariff plan or server'
+          properties:
+            value: { type: integer, example: 40 }
+            bytes: { type: integer, example: 42949672960 }
+            for: { type: string, default: 'Gb' }
+        gpu:
+          type: object
+          nullable: true
+          description: 'Count of GPUs included in this tariff plan or server'
+          properties:
+            value: { type: integer, example: 1 }
+            for: { type: string, default: 'pc' }
+        traff:
+          type: object
+          description: 'Amount of network bandwidth included in this tariff plan or server'
+          properties:
+            value: { type: integer, example: 32 }
+            bytes: { type: integer, example: 35184372088832 }
+            for: { type: string, default: 'Tb' }
+    'ScheduleDay':
+      type: object
+      nullable: true
+      description: 'Daily backups'
+      properties:
+        type: { type: string, enum: [ 'day' ], example: 'day', description: 'Schedule type' }
+        left: { type: integer, example: 1, minimum: 1, maximum: 7, description: 'How many backups stays after rotation' }
+        hour: { type: integer, example: 2, minimum: 0, maximum: 10, description: 'Hour for start, night time' }
+      required: [ 'type', 'left', 'hour' ]
+    'ScheduleWeek':
+      type: object
+      nullable: true
+      description: 'Weekly backups'
+      properties:
+        type: { type: string, enum: [ 'week' ], example: 'week', description: 'Schedule type' }
+        left: { type: integer, example: 1, minimum: 1, maximum: 7, description: 'How many backups stays after rotation' }
+        day: { type: integer, example: 4, minimum: 1, maximum: 7, description: 'Day of week, 1 is for Monday' }
+        hour: { type: integer, example: 2, minimum: 0, maximum: 10, description: 'Hour for start, night time' }
+      required: [ 'type', 'left', 'day', 'hour' ]
+    'ScheduleMonth':
+      type: object
+      nullable: true
+      description: 'Monthly backups'
+      properties:
+        type: { type: string, enum: [ 'month' ], example: 'month', description: 'Schedule type' }
+        left: { type: integer, example: 1, minimum: 1, maximum: 7, description: 'How many backups stays after rotation' }
+        day: { type: integer, example: 4, minimum: 1, maximum: 31, description: 'Day of month' }
+        hour: { type: integer, example: 2, minimum: 0, maximum: 10, description: 'Hour for start, night time' }
+      required: [ 'type', 'left', 'day', 'hour' ]
+    'DNS':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 290676, description: 'Domain ID' }
+        name: { type: string, example: 'test-domain.com', description: 'Domain name' }
+        full_name: { type: string, example: 'DNS #290676 – test-domain.com', description: 'Service name' }
+        created: { type: string, format: date, description: 'Service create date' }
+        updated: { type: string, format: date, description: 'Service update date' }
+        end: { type: string, format: date, description: 'Service end date' }
+        status: { $ref: '#/components/schemas/ServiceStatus' }
+        status_text: { type: string, description: 'Service status description' }
+        real: { type: boolean, example: true, description: 'DNS servers correctly set up in domain NS records' }
+        can:
+          type: object
+          properties:
+            delete: { type: boolean, example: true, description: 'Ability to delete service' }
+    'Operation':
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 4290676, description: 'Operation ID' }
+        purse: { type: string, enum: [ 'real', 'bonus', 'partner' ], example: 'real', description: 'Operation purse' }
+        type: { type: integer, enum: [ -1, 1 ], example: 1, description: 'Debit or credit' }
+        status: { type: integer, enum: [ 0, 1 ], example: 1, description: 'Paid or not' }
+        summ: { type: string, format: number, example: 100, description: 'Operation summ' }
+        created: { type: string, format: date-time, example: '2025-02-22 12:28:23', description: 'Operation create date' }
+        updated: { type: string, format: date-time, example: '2025-02-22 12:29:13', description: 'Operation update date' }
+        comment: { type: string, example: 'Balance replenishment', description: 'Operation description' }
+        payment:
+          type: object
+          description: 'If it is replenishment'
+          nullable: true
+          properties:
+            type: { type: string, example: 'card', description: 'Payment type' }
+            name: { type: string, example: 'Bank card', description: 'Payment name' }
+        service:
+          type: object
+          description: 'If it is payment for service'
+          nullable: true
+          properties:
+            id: { type: integer, example: 290676, description: 'Payment for service ID' }
+        paylink: { type: string, nullable: true, format: uri, example: 'https://domain.com/link/olololo', description: 'External link for payment' }
+        pdf: { type: string, nullable: true, format: uri, example: 'https://domain.com/link/file.pdf', description: 'External link for PDF download' }
+
+tags:
+  - name: Account
+  - name: Helpers
+  - name: Server
+  - name: ISO
+    description: |
+      The process of downloading a new file and creating an ISO service:
+      * we pass to POST /v1/iso a new URL for uploading in the url field, as a result, in the data object in the id field we get the upload KEY, or erroneous statuses indicating the error text
+      * we make a periodic request to GET /v1/iso/KEY with the download KEY, checking whether the file has loaded: in the data object, we check the status field for the value "done", this means that the file has been downloaded, or the value "processing" is returned indicating the download progress, or erroneous statuses indicating the error text
+      * then create an ISO service from the uploaded POST /v1/iso/KEY file with the KEY, as a result, in the data object in the id field we get the ISO service ID
+  - name: SSH key
+  - name: Backup
+  - name: Backup schedules
+    description: |
+      When using various types of schedules for one service together (day and week, for example), it is recommended to set the same hour for backup creation avoid data loss when some type of backup did not created.
+  - name: IP address
+  - name: Local IP address
+    description: |
+      Local network is available within the datacenter. This is PUBLIC local network.
+  - name: DNS
+    description: |
+      Default update DNS time is 600 seconds.
+  - name: Billing
+    description: |
+      A brief description of some of the returned fields for operations:
+      purse – balance type (real – main balance, bonus – bonus balance, partner – partner balance), type – operation type (1 – crediting, -1 – debiting), status – operation status (0 – not paid, 1 – paid), summ – operation amount (reduced to string type).
+      If this is a replenishment operation and it can be paid, such an operation has a paylink field, it contains a link to the payment process, the process does not require authentication in the control panel and the link can be transferred to anyone, the link is unique and one-time, if the operation is paid, it is impossible to pay again using such a link.
+
+paths:
+
+  # Account
+  /account:
+    get:
+      summary: 'Account information and shutdown forecast'
+      tags: [ 'Account' ]
+      description: |
+        The ID and name of the account, the date of creation and the shutdown forecast are returned (the date before which there are enough funds to pay for all services).
+        The data of the shutdown forecast and balance are cached and changed only in case of real changes in accounts or services.
+        The can object will list some account features: the ability to create new users, order new services, withdraw money from accounts.
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Account information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      account:
+                        type: object
+                        properties:
+                          id: { type: integer, example: 12345, description: 'Account ID' }
+                          name: { type: string, example: 'a12345', description: 'Account name' }
+                      created: { type: string, format: date-time, example: '2022-02-24 10:28:23', description: 'Account create date' }
+                      forecast: { type: string, nullable: true, format: date, example: '2029-02-20', description: 'The shutdown forecast date' }
+                      can:
+                        type: object
+                        properties:
+                          add_user: { type: boolean, description: 'Ability to create new user' }
+                          add_service: { type: boolean, description: 'Ability to order new services' }
+                          convert_to_cash: { type: boolean, description: 'Ability to withdraw money from partner balance' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Balance
+  /account.balance:
+    get:
+      summary: 'Account balance'
+      tags: [ 'Account' ]
+      description: |
+        All available balances are returned, main, bonus and partner, if there were no transactions on the account, the balance is not returned
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Balance information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      real: { type: string, format: number, example: '105.00', description: 'Real account balance' }
+                      bonus: { type: string, format: number, example: '10.08', description: 'Bonus balance' }
+                      partner: { type: string, format: number, example: '40.34', description: 'Affiliate program balance' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Limit
+  /account.limit:
+    get:
+      summary: 'Account limits'
+      tags: [ 'Account' ]
+      description: |
+        For each type of service, an object will be returned that specifies the restrictions: max – the maximum of services of this type in the account,
+        child_max – the maximum of services of this type in the parent service (for example, the number of IPv4 addresses for one server),
+        now - the number of ordered services of this type in the account at the moment.
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Account limits information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      server: { $ref: '#/components/schemas/Limit' }
+                      server-ip4: { $ref: '#/components/schemas/LimitChild' }
+                      server-ip6: { $ref: '#/components/schemas/LimitChild' }
+                      iso: { $ref: '#/components/schemas/Limit' }
+                      backup: { $ref: '#/components/schemas/Limit' }
+                      ssl: { $ref: '#/components/schemas/Limit' }
+                      domain: { $ref: '#/components/schemas/Limit' }
+                      dns: { $ref: '#/components/schemas/Limit' }
+                      extdisk-hdd: { $ref: '#/components/schemas/Limit' }
+                      extdisk-nvme: { $ref: '#/components/schemas/Limit' }
+                      reserve-ip: { $ref: '#/components/schemas/Limit' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Auth
+  /auth:
+    post:
+      deprecated: true
+      summary: 'User authentication and token obtain'
+      tags: [ 'Account' ]
+      description: |
+        **METHOD HAS BEEN REMOVED FROM PRODUCTION ENVIRONMENT!**
+        
+        If user has IP access limit or uses 2FA, it is not possible to login via API.
+        There are restrictions on the number of authentication requests from one IP address, with frequent unsuccessful authentication attempts, the IP address is blocked for 4 hours.
+        The IP address is also checked against Spamhaus blacklists (SBL, SBL CSS, XBL, SBL DROP, TOR), authentication from such addresses is prohibited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, example: 'user@domain.tld', format: email, description: 'Client user login name' }
+                password: { type: string, example: 'Pas$W0rD', format: password, description: 'Client user password' }
+              required: [ 'email', 'password' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Token info' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      token: { type: string, example: '024ccf95e8544260c0f1f78a6deadbeefd8636f6baa326c0da7b0a2c207693ad', description: 'API access token' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Register
+  /register:
+    post:
+      summary: 'Registration of a new account'
+      tags: [ 'Account' ]
+      description: |
+        To register a new account, you must pass the authorization token of an existing client and existing affiliate code in the code field.
+        The owner of affiliate code must have turned on ability to register new accounts (contact provider support for more information).
+        The result of the request will be an data object with data about the new account and user.
+      security:
+        - apiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, example: 'user@domain.tld', format: email, description: 'New client login' }
+                code: { type: string, example: 'SuperPartner', description: 'Your partner code' }
+              required: [ 'email', 'code' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'New account created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      account: { type: object, properties: { id: { type: integer, example: 12345, description: 'Account ID' } } }
+                      user:
+                        type: object
+                        properties:
+                          id: { type: integer, example: 12345, description: 'User ID' }
+                          name: { type: string, example: 'user@domain.tld', description: 'User login' }
+                          token: { type: string, nullable: true, example: '024ccf95e8544260c0f1f78a6deadbeefd8636f6baa326c0da7b0a2c207693ad', description: 'API access token, default null for new user' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSGroup
+  /server-group:
+    get:
+      summary: 'List of tariff plan groups'
+      tags: [ 'Helpers' ]
+      description: |
+        A list of tariff plan groups with a brief description is returned in data array.
+        The received group IDs should be used in the future when requesting information on additional objects.
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Groups list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 13, description: 'Tariff plan group ID' }
+                        name: { type: string, example: 'Standard servers', description: 'Tariff plan group name' }
+                        active: { type: boolean, example: true, description: 'Groups status' }
+                        description: { type: string, example: 'Powerful servers based on the ...', description: 'Group description' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Datacenter
+  /datacenter:
+    get:
+      summary: 'List of datacenters'
+      tags: [ 'Helpers' ]
+      description: |
+        A list of datacenters is returned in data array.
+        The data is an array of objects, the active flag indicates the possibility of ordering a server in a specific datacenter.
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Datacenters list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 1, description: 'Datacenter ID' }
+                        name: { type: string, example: 'Amsterdam 1', description: 'Datacenter name' }
+                        country: { type: string, example: 'nl', description: 'Datacenter country' }
+                        active: { type: boolean, example: true, description: 'Datacenter status' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Template
+  /template:
+    get:
+      summary: 'List of OS templates'
+      tags: [ 'Helpers' ]
+      description: |
+        A list of operating system templates available for installing or reinstalling the server.
+        The data is an array of objects, the active flag indicates the possibility of ordering a server with a specific OS template.
+        The ssh-key flag indicates the ability to use authorization using a custom SSH key in a specific template.
+        The server-plan array contains the ID of tariff plans for which the installation of a server with a specific OS template is available.
+        It is also necessary to pay attention to the minimum system requirements of the OS template:
+        the following are specified in the limits object parameters: 
+        minimum number of processors/cores – cpu, minimum number RAM in GB is ram, the minimum amount of space for a disk partition in GB is disk.
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'OS templates list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 1, description: 'Template ID' }
+                        name: { type: string, example: 'CentOS 8 x64', description: 'Template name' }
+                        active: { type: boolean, example: true, description: 'Template status' }
+                        ssh-key: { type: boolean, example: true, description: 'Template can use SSH key for installation' }
+                        server-plan: { type: array, example: [ 10, 11 ], items: { type: integer }, description: 'List of available tariffs for this template' }
+                        limits:
+                          type: object
+                          properties:
+                            cpu:
+                              type: object
+                              description: 'Minumum CPUs for this template'
+                              properties:
+                                min: { type: integer, example: 1 }
+                            ram:
+                              type: object
+                              description: 'Minumum RAM for this template'
+                              properties:
+                                min: { type: integer, example: 1 }
+                            disk:
+                              type: object
+                              description: 'Minumum Storage for this template'
+                              properties:
+                                min: { type: integer, example: 5 }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSPlan
+  /server-plan/{groupID}:
+    get:
+      summary: 'List of tariff plans for servers'
+      tags: [ 'Helpers' ]
+      description: |
+        The list of tariff plans for servers is returned by the ID of tariff plan group.
+        The data is an array of objects, the active and enable flags indicate the possibility of ordering a server with a specific tariff plan.
+        The data object contains brief characteristics of the tariff plan. The cost and period fields contain the price of the tariff for the specified period (usually 1 day).
+        The min_money field indicates how much funds you need to have on the main balance to order the tariff, the can_bonus flag indicates the ability to pay the tariff with funds from the bonus balance.
+        The data object stores the full composition of the tariff plan: cpu – the number of processors/ cores, ram – the amount of RAM in GB, disk – the number of disk space in GB, traff – the amount of traffic included in the tariff plan for 1 calendar month in GB.
+        The has_params parameter stores the attribute of the constructor tariff, in this case additionally, the tariff may have a params object with data on the possible composition the final tariff and the cost of individual parameters of the tariff plan. Total cost such a tariff consists of the cost of the tariff plan itself and the total the cost of all added tariff parameters.
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: groupID
+          in: path
+          description: 'Tariff plan group ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server plans list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 13, description: 'Plan ID' }
+                        name: { type: string, example: 'Cloud', description: 'Plan name' }
+                        cost: { type: number, example: 1.55, description: 'Plan cost with client discounts' }
+                        full_cost: { type: number, example: 1.75, description: 'Plan full cost' }
+                        period: { type: string, default: 'day', description: 'Plan billing period' }
+                        min_money: { type: number, example: 10, description: 'Minimal balance for order this plan' }
+                        can_bonus: { type: boolean, example: true, description: 'Can pay with bonuses when order this plan' }
+                        description: { type: string, example: 'Base tariff plan', description: 'Plan description' }
+                        server-group: { type: integer, example: 11, description: 'Tariff plan group ID' }
+                        active: { type: boolean, example: true, description: 'Plan status' }
+                        enable: { type: boolean, example: true, description: 'Plan status' }
+                        data: { $ref: '#/components/schemas/Tariff' }
+                        backup:
+                          type: object
+                          description: 'Backup cost for this tariff plan'
+                          properties:
+                            cost: { type: number, example: 1.55, description: 'Backup cost per Gb with client discounts' }
+                            full_cost: { type: number, example: 1.75, description: 'Backup full cost per Gb' }
+                            period: { type: string, default: 'day', description: 'Backup billing period' }
+                            for: { type: string, default: 'Gb' }
+                        has_params: { type: boolean, example: true, description: 'When true this plan has expandable params' }
+                        params:
+                          type: object
+                          nullable: true
+                          description: 'Expandable params for this tariff plan'
+                          properties:
+                            cpu:
+                              type: object
+                              description: 'Expandable CPUs data for this tariff plan'
+                              properties:
+                                min: { type: integer, example: 4 }
+                                max: { type: integer, example: 128 }
+                                step: { type: integer, default: 1 }
+                                for: { type: string, default: 'core' }
+                                cost: { type: number, example: 1.05, description: 'CPU cost per core with client discounts' }
+                                full_cost: { type: number, example: 1.15, description: 'CPU full cost per core' }
+                                period: { type: string, default: 'day', description: 'Billing period' }
+                                st_bonus: { type: boolean, default: true, description: 'Can pay with bonuses when order this plan' }
+                            ram:
+                              type: object
+                              description: 'Expandable RAM data for this tariff plan'
+                              properties:
+                                min: { type: integer, example: 4 }
+                                max: { type: integer, example: 512 }
+                                step: { type: integer, default: 1 }
+                                ram_for_cpu: { type: integer, default: 1, description: 'RAM to CPU ratio' }
+                                for: { type: string, default: 'Gb' }
+                                cost: { type: number, example: 0.65, description: 'RAM cost per Gb with client discounts' }
+                                full_cost: { type: number, example: 0.85, description: 'RAM full cost per Gb' }
+                                period: { type: string, default: 'day', description: 'Billing period' }
+                                st_bonus: { type: boolean, default: true, description: 'Can pay with bonuses when order this plan' }
+                            disk:
+                              type: object
+                              description: 'Expandable Storage data for this tariff plan'
+                              properties:
+                                min: { type: integer, example: 5 }
+                                max: { type: integer, example: 2000 }
+                                step: { type: integer, default: 10 }
+                                for: { type: string, default: 'Gb' }
+                                cost: { type: number, example: 0.55, description: 'Storage cost per Gb with client discounts' }
+                                full_cost: { type: number, example: 0.55, description: 'Storage full cost per Gb' }
+                                period: { type: string, default: 'day', description: 'Billing period' }
+                                st_bonus: { type: boolean, default: true, description: 'Can pay with bonuses when order this plan' }
+                            ip4:
+                              type: object
+                              description: 'Ability to attach IPv4'
+                              properties:
+                                cost: { type: number, example: 0.07, description: 'IPv4 cost with client discounts' }
+                                full_cost: { type: number, example: 0.08, description: 'IPv4 full cost' }
+                                period: { type: string, default: 'day', description: 'Billing period' }
+                                st_bonus: { type: boolean, default: true, description: 'Can pay with bonuses when order this plan' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # SSHKey
+  /ssh-key:
+    get:
+      summary: 'Get SSH keys list'
+      tags: [ 'SSH key' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                description: 'SSH keys list'
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH keys list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 1, description: 'SSH key ID' }
+                        name: { type: string, example: 'Key #1', description: 'SSH key name' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create new SSH key'
+      tags: [ 'SSH key' ]
+      security:
+        - apiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: 'My SSH key', description: 'SSH key name' }
+                data: { type: string, example: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQ...', description: 'Key string represenatation' }
+              required: [ 'name', 'data' ]
+      responses:
+        201:
+          description: 'Created'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH key created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 3, description: 'Created key ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # SSHKey
+  /ssh-key/{keyID}:
+    get:
+      summary: 'View one SSH key'
+      tags: [ 'SSH key' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: keyID
+          in: path
+          description: 'SSH key ID to view specific one'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                description: 'SSH key view'
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH key information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 1, description: 'SSH key ID' }
+                      name: { type: string, example: 'Key #1', description: 'SSH key name' }
+                      status: { type: string, enum: [ 'active', 'deleted' ], description: 'SSH key status' }
+                      data: { type: string, example: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQ...', description: 'SSH key string representation' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Update SSH key'
+      tags: [ 'SSH key' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: keyID
+          in: path
+          description: 'SSH key ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: 'New SSH key', description: 'Key name' }
+                data: { type: string, example: 'ssh-rsa AAAAB3NzaC1yc1EAAAADAQ...', description: 'Key string represenatation' }
+              required: [ 'name', 'data' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH key updated' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete SSH key'
+      tags: [ 'SSH key' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: keyID
+          in: path
+          description: 'SSH key ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH key deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # ISO
+  /iso:
+    get:
+      summary: 'Get ISO list'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                description: 'ISO list'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: '#/components/schemas/ISO'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Download ISO'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url: { type: string, format: uri, description: 'URL for downloading the ISO file, direct link to the application/x-iso9660-image or application/x-iso-image MIME format file, maximum file size is 10 gigabytes, protocols: http, https, ftp, ftps' }
+              required: [ 'url' ]
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                description: 'Download ISO file'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO download queued' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: string, example: 'bdded476fbc148565fdfcdf53c23772f', description: 'ISO download job ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # ISO
+  /iso/{KEY}:
+    get:
+      summary: 'Check ISO download status'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: KEY
+          in: path
+          description: 'ISO download job KEY'
+          required: true
+          schema:
+            type: string
+            format: string
+            pattern: '^[0-9a-f]{32}$'
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                description: 'ISO download status'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO server download info' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      status: { type: string, enum: [ 'processing', 'done', 'error' ], default: 'processing', description: 'Download job status' }
+                      description: { type: string, nullable: true, default: 'Progress: 45%', description: 'Additional description' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create new ISO service'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: KEY
+          in: path
+          description: 'ISO download job KEY'
+          required: true
+          schema:
+            type: string
+            format: string
+            pattern: '^[0-9a-f]{32}$'
+          style: simple
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                description: 'Create new ISO service from downloaded file'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 12347, description: 'ISO service ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # ISO
+  /iso/{isoID}:
+    get:
+      summary: 'View ISO'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: isoID
+          in: path
+          description: 'ISO service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                description: 'ISO information'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO information' }
+                  data: { $ref: '#/components/schemas/ISO' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete ISO service'
+      tags: [ 'ISO' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: isoID
+          in: path
+          description: 'ISO service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'ISO deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDS
+  /server:
+    get:
+      summary: 'Servers list'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                description: 'Servers list'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 12345, description: 'Server ID' }
+                        name: { type: string, example: 'Server #12345', description: 'Server name' }
+                        full_name: { type: string, example: 'Server 2 RAM / 1 CPU / 40 NVMe #12345', description: 'Service name' }
+                        created: { type: string, format: date, description: 'Service create date' }
+                        updated: { type: string, format: date, description: 'Service update date' }
+                        end: { type: string, format: date, description: 'Service end date' }
+                        status: { $ref: '#/components/schemas/ServiceStatus' }
+                        status_text: { type: string, description: 'Service status description' }
+                        ip:
+                          type: object
+                          nullable: true
+                          oneOf:
+                            - $ref: '#/components/schemas/IPv4s'
+                            - $ref: '#/components/schemas/IPv6s'
+                          discriminator:
+                            propertyName: 'ip.type'
+                            mapping:
+                              4: '#/components/schemas/IPv4s'
+                              6: '#/components/schemas/IPv6s'
+                        server-plan:
+                          type: object
+                          properties:
+                            id: { type: integer, example: 1, description: 'Tariff plan ID' }
+                            name: { type: string, example: '2 RAM / 1 CPU / 40 NVMe', description: 'Tariff plan name' }
+                        template:
+                          type: object
+                          properties:
+                            id: { type: integer, example: 23, description: 'OS template ID' }
+                            name: { type: string, example: 'Ubuntu 24.04', description: 'OS template name' }
+                        datacenter: { $ref: '#/components/schemas/Datacenter' }
+                        can:
+                          type: object
+                          properties:
+                            reboot: { type: boolean, example: true, description: 'Ability to reboot server' }
+                            update: { type: boolean, example: true, description: 'Ability to update server' }
+                            delete: { type: boolean, example: true, description: 'Ability to delete server' }
+                            prolong: { type: boolean, example: false, description: 'Ability to prolong server' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create new server'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, nullable: true, example: 'Server name', description: 'Server name' }
+                datacenter: { type: integer, example: 1, description: 'Datacenter ID' }
+                server-plan: { type: integer, example: 1, description: 'Tariff plan ID' }
+                template: { type: integer, nullable: true, example: 1, description: 'OS template ID, mutually exclusive parameter with backup' }
+                backup: { type: integer, nullable: true, description: 'ID of the backup service, mutually exclusive parameter with template. The backup must be located in the same data center as the server being created and be no larger than the disk size of the selected tariff plan' }
+                schedule: { type: string, nullable: true, default: '1', enum: [ '0', '1' ], description: '0 or 1, for create automatic backup week schedule for server. First copy will be created the next day after service created' }
+                ssh-key: { type: integer, nullable: true, example: 1, description: 'SSH key ID for root user in the supported OS, ignored in case of recovery from backup' }
+                iso: { type: integer, nullable: true, description: 'ID of the ISO service, mutually exclusive parameter with template' }
+                host: { type: string, nullable: true, example: 'hostname.com', description: 'Server hostname, must be correct domain name, ignored in case of recovery from backup' }
+                cpu: { type: integer, nullable: true, example: 4, description: 'Number of virtual CPUs, if tariff plan supports parameter settings' }
+                ram: { type: integer, nullable: true, example: 8, description: 'Amount of RAM in GBs, if tariff plan supports parameter settings' }
+                disk: { type: integer, nullable: true, example: 40, description: 'Amount of storage in GBs, if tariff plan supports parameter settings' }
+                gpu: { type: integer, nullable: true, example: 1, description: 'Number of GPUs, if tariff plan supports parameter settings' }
+                ip4: { type: string, nullable: true, example: '1', enum: [ '0', '1' ], description: '0 or 1, for order IPv4 for server, if tariff plan supports parameter settings' }
+              required: [ 'datacenter', 'server-plan' ]
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 512348, description: 'New server ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDS
+  /server/{serverID}:
+    get:
+      summary: 'View server info'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          required: true
+          description: 'Server ID'
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                description: 'Server information'
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 12345, description: 'Server ID' }
+                      name: { type: string, example: 'Server #12345', description: 'Server name' }
+                      full_name: { type: string, example: 'Server 2 RAM / 1 CPU / 40 NVMe #12345', description: 'Service name' }
+                      created: { type: string, format: date, description: 'Service create date' }
+                      updated: { type: string, format: date, description: 'Service update date' }
+                      end: { type: string, format: date, description: 'Service end date' }
+                      status: { $ref: '#/components/schemas/ServiceStatus' }
+                      status_text: { type: string, description: 'Service status description' }
+                      autoprolong: { type: boolean, example: true, description: 'Automatic prolongation' }
+                      autorun: { type: boolean, example: true, description: 'Automatic server start' }
+                      ip:
+                        type: object
+                        nullable: true
+                        oneOf:
+                          - $ref: '#/components/schemas/IPv4s'
+                          - $ref: '#/components/schemas/IPv6s'
+                        discriminator:
+                          propertyName: 'ip.type'
+                          mapping:
+                            4: '#/components/schemas/IPv4s'
+                            6: '#/components/schemas/IPv6s'
+                      ip_local:
+                        type: object
+                        nullable: true
+                        properties:
+                          ip: { type: string, format: ipv4, example: '10.13.2.172', description: 'Local IP address' }
+                          netmask: { type: string, format: ipv4, example: '255.255.0.0', description: 'Local IP netmask' }
+                          mac: { type: string, example: '56:00:00:04:55:2a', description: 'Local interface MAC address' }
+                      host: { type: string, format: hostname, example: 'super.server.host', description: 'Server hostname' }
+                      data: { $ref: '#/components/schemas/Tariff' }
+                      server-plan:
+                        type: object
+                        properties:
+                          id: { type: integer, example: 1, description: 'Tariff plan ID' }
+                          name: { type: string, example: '2 RAM / 1 CPU / 40 NVMe', description: 'Tariff plan name' }
+                      template:
+                        type: object
+                        properties:
+                          id: { type: integer, example: 23, description: 'OS template ID' }
+                          name: { type: string, example: 'Ubuntu 24.04', description: 'OS template name' }
+                      datacenter: { $ref: '#/components/schemas/Datacenter' }
+                      ssh-key:
+                        type: object
+                        nullable: true
+                        properties:
+                          id: { type: integer, example: 1, description: 'SSH key ID' }
+                          name: { type: string, example: 'Key #1', description: 'SSH key name' }
+                      can:
+                        type: object
+                        properties:
+                          reboot: { type: boolean, example: true, description: 'Ability to reboot server' }
+                          update: { type: boolean, example: true, description: 'Ability to update server' }
+                          delete: { type: boolean, example: true, description: 'Ability to delete server' }
+                          prolong: { type: boolean, example: false, description: 'Ability to prolong server' }
+                          backup: { type: boolean, example: true, description: 'Ability to create backup of server' }
+                          ip_local: { type: boolean, example: true, description: 'Ability to create LAN for server' }
+                      bandwidth:
+                        type: object
+                        properties:
+                          current_month: { type: integer, example: 1004500, description: 'Total traffic in bytes for current month' }
+                          last_month: { type: integer, example: 341094500, description: 'Total traffic in bytes for previous month' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Update server parameters'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: 'New server name', description: 'Server name' }
+                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Server automatic ptolongation option' }
+                autorun: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Server automatic start option' }
+              required: [ 'name' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server updated' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete server'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSReboot
+  /server.reboot/{serverID}:
+    put:
+      summary: 'Server reboot'
+      tags: [ 'Server' ]
+      description: |
+        Server restart by server ID. Additionally, you can pass the 'type', which can take the values 'soft' or 'hard'.
+        When soft (by default), reboot signal will be sent to the server.
+        When hard, to the operating system will be sent a shutdown signal, after a while the status of the server will be checked, if it is turned off, it will be started again, otherwise the server will be shut down forcibly (with possible data loss in the running system), and after that it will be started again.
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type: { type: string, default: 'soft', enum: [ 'soft', 'hard' ],  example: 'hard', description: 'Server reboot type: hard or soft' }
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server reboot queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSReinstall
+  /server.reinstall/{serverID}:
+    put:
+      summary: 'Reinstalling the server'
+      tags: [ 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template: { type: integer, example: 10, description: 'OS template ID to install, the OS template may not be available for specific tariff plans' }
+                ssh-key: { type: integer, example: 1, description: 'SSH key ID for root user in supported OS' }
+                host: { type: string, format: hostname, example: 'hostname.com', description: 'Server hostname, must be the correct domain name' }
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server reinstall queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSPassword
+  /server.password/{serverID}:
+    get:
+      summary: 'Get server password'
+      tags: [ 'Server' ]
+      description: |
+        Get default server password
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server password information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      user: { type: string, description: 'Default superuser name' }
+                      password: { type: string, description: 'Default password' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Set server password'
+      tags: [ 'Server' ]
+      description: |
+        The server will be restarted, root user password will set in supported Linux distributions.
+        Attention, if you are using an OS installed from your ISO or Windows or FreeBSD OS is installed on the server, the OS administrator password will not be changed
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password: { type: string, format: password, description: 'Server superuser password' }
+              required: [ 'password' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server password change queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSEnhance
+  /server.plan/{serverID}:
+    put:
+      summary: 'Change server tariff plan'
+      tags: [ 'Server' ]
+      description: |
+        Changing the tariff plan to a junior one is technically impossible. The server will be restarted. 
+        After changing the tariff plan, resources will be added automatically, you need to manually expand the file system to the entire new disk partition using OS tools.
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                server-plan: { type: integer, example: 5, description: 'New tariff plan ID, must be from the same tariff group' }
+                cpu: { type: integer, example: 8, description: 'New CPU count (when constructor tariff)' }
+                ram: { type: integer, example: 16, description: 'New RAM amount in GB (when constructor tariff)' }
+                disk: { type: integer, example: 100, description: 'New storage amount in GB, must not be smaller than current amount (when constructor tariff)' }
+                gpu: { type: integer, example: 1, description: 'New GPU count (when constructor tariff)' }
+              required: [ 'server-plan' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server plan enhance queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSProlong
+  /server.prolong/{serverID}:
+    put:
+      summary: 'Prolong and start server'
+      tags: [ 'Server' ]
+      description: |
+        Use in case when the server was not started after payment, for example, due to disabled auto-renewal.
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server prolong queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSISO
+  /server.iso/{serverID}:
+    put:
+      summary: 'Attach ISO to server'
+      description: 'The server will be restarted'
+      tags: [ 'ISO', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                iso: { type: integer, example: 123457, description: 'ISO service ID' }
+              required: [ 'iso' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server ISO attach queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Detach ISO from server'
+      description: 'The server will be restarted'
+      tags: [ 'ISO', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server ISO detach queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSStat
+  /server.stat/{serverID}:
+    get:
+      summary: 'Server statistics'
+      tags: [ 'Server' ]
+      description: |
+        Getting statistics data for the server. By default, information for the last 30 days is displayed.
+        When specifying the from and to parameters, you can get statistics output for the specified period, it is permissible to specify the date/time in standard formats in the parameters.
+        Statistics are displayed in blocks for every hour.
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+        - name: from
+          in: query
+          description: 'Filter date from'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 'Filter date to'
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server stat information' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        dt: { type: string, format: date-time, example: '2024-07-12 00:00:00' }
+                        stat:
+                          type: object
+                          properties:
+                            cpu: { type: number, example: 2.08, description: 'Average CPU utilization as a percentage per time segment' }
+                            disk_reads: { type: integer, example: 101, description: 'The number of read operations for the specified time segment' }
+                            disk_writes: { type: integer, example: 167, description: 'The number of write operations for the specified time segment' }
+                            lnet_rx: { type: integer, example: 0, description: 'Received data over local network in bytes' }
+                            lnet_tx: { type: integer, example: 0, description: 'Transmitted data over local network in bytes' }
+                            vnet_rx: { type: integer, example: 9948, description: 'Received data over external network (internet) in bytes' }
+                            vnet_tx: { type: integer, example: 103054, description: 'Transmitted data over external network (internet) in bytes' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Backup
+  /backup:
+    get:
+      summary: 'Backups list'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup list' }
+                  data: { $ref: '#/components/schemas/Backup' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Backup
+  /backup/{backupID}:
+    get:
+      summary: 'View backup information'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: backupID
+          in: path
+          description: 'Backup ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup information' }
+                  data: { $ref: '#/components/schemas/Backup' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Update backup information'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: backupID
+          in: path
+          description: 'Backup ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: 'New backup name', description: 'Backup name' }
+                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Backup automatic ptolongation option' }
+              required: [ 'name' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup updated' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete backup'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: backupID
+          in: path
+          description: 'Backup ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Backup
+  /backup/{serviceID}:
+    post:
+      summary: 'Create new backup of service'
+      description: 'Backup will be created in the same datacenter where service is located.'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID (server or external disk)'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup creation queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # BackupRestore
+  /backup.restore/{backupID}:
+    put:
+      summary: 'Restore backup to service'
+      description: 'Service and backup must be in the same datacenter. Service disk size must not be smaller than backup size.'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: backupID
+          in: path
+          description: 'Backup ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service: { type: integer, example: 12345, description: 'Service ID to restore to (server or external disk)' }
+              required: [ 'service' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Service backup restore queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # BackuCopy
+  /backup.copy/{backupID}:
+    post:
+      summary: 'Copy backup to another datacenter'
+      tags: [ 'Backup' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: backupID
+          in: path
+          description: 'Backup ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                datacenter: { type: integer, example: 2, description: 'Datacenter ID to copy to' }
+              required: [ 'datacenter' ]
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Backup creation queued' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 321256, description: 'New backup ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # BackupSchedule
+  /backup.schedule/{serviceID}:
+    get:
+      summary: 'Backup schedule list'
+      tags: [ 'Backup schedules' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID (server or external disk)'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Service schedule information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      day: { $ref: '#/components/schemas/ScheduleDay' }
+                      week: { $ref: '#/components/schemas/ScheduleWeek' }
+                      month: { $ref: '#/components/schemas/ScheduleMonth' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create backup schedule'
+      tags: [ 'Backup schedules' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID (server or external disk)'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ScheduleDay'
+                - $ref: '#/components/schemas/ScheduleWeek'
+                - $ref: '#/components/schemas/ScheduleMonth'
+              discriminator:
+                propertyName: 'type'
+                mapping:
+                  day: '#/components/schemas/ScheduleDay'
+                  week: '#/components/schemas/ScheduleWeek'
+                  month: '#/components/schemas/ScheduleMonth'
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Service backup schedule created' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete backup schedule'
+      tags: [ 'Backup schedules' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID (server or external disk)'
+          required: true
+          schema:
+            type: integer
+          style: simple
+        - name: type
+          in: query
+          description: 'If property not specified, all schedules will be deleted'
+          required: false
+          schema:
+            type: string
+            enum: [ 'day', 'week', 'month' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Service backup schedule deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSLocalIP
+  /server.ip.local/{serverID}:
+    get:
+      summary: 'View info about server local IP address'
+      tags: [ 'Local IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server local IP information' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      ip: { type: string, format: ipv4, example: '10.13.2.172', description: 'Local IP address' }
+                      netmask: { type: string, format: ipv4, example: '255.255.0.0', description: 'Local IP netmask' }
+                      mac: { type: string, example: '56:00:00:04:55:2a', description: 'Local interface MAC address' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create server local IP address'
+      tags: [ 'Local IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server local IP creation queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete server local IP address'
+      tags: [ 'Local IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server local IP delete queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # IPpool
+  /ip:
+    get:
+      summary: 'IP pool'
+      description: List of all IP addresses assigned to the client
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'IP list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/IPv4p'
+                        - $ref: '#/components/schemas/IPv6p'
+                      discriminator:
+                        propertyName: 'ip.type'
+                        mapping:
+                          4: '#/components/schemas/IPv4p'
+                          6: '#/components/schemas/IPv6p'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # IPpool
+  /ip/{ipID}:
+    get:
+      summary: 'IP information'
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: ipID
+          in: path
+          description: 'IP ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'IP information' }
+                  data:
+                    type: object
+                    nullable: true
+                    oneOf:
+                      - $ref: '#/components/schemas/IPv4p'
+                      - $ref: '#/components/schemas/IPv6p'
+                    discriminator:
+                      propertyName: 'data.type'
+                      mapping:
+                        4: '#/components/schemas/IPv4p'
+                        6: '#/components/schemas/IPv6p'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # IP
+  /server-ip:
+    get:
+      summary: 'All services list with additional IP addresses'
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Additional IP list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: '#/components/schemas/IPservice'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # VDSIP
+  /server.ip/{serverID}:
+    get:
+      summary: 'Services list with additional IP addresses'
+      description: 'Filter services with additional IP addresses by parent server ID'
+      tags: [ 'IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server IP list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: '#/components/schemas/IPservice'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Order additional IP addresses for server'
+      tags: [ 'IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type: { type: string, enum: [ '4', '6' ], example: '4', description: 'IP address type' }
+                count: { type: integer, example: 1, description: 'IP addresses count' }
+              required: [ 'type', 'count' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server additional IP creation queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Delete additional IP addresses for server'
+      description: 'Delete IP addresses by list from server'
+      tags: [ 'IP address', 'Server' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serverID
+          in: path
+          description: 'Server ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type: { type: string, enum: [ '4', '6' ], example: '4', description: 'IP address type' }
+                delete: { type: array, items: { type: integer }, example: [ 345, 561 ], description: 'Array of IP IDs for delete (IDs from IP pool)' }
+              required: [ 'type', 'delete' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Server additional IP deletion queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # IP
+  /server-ip/{serviceID}:
+    put:
+      summary: 'Delete additional IP addresses for service'
+      description: 'Delete IP addresses by list from additional IP service'
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Additional IP Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delete: { type: array, items: { type: integer }, example: [ 345, 561 ], description: 'Array of IP IDs for delete (IDs from IP pool)' }
+              required: [ 'delete' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Additional IP deletion queued' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete additional IP service'
+      description: 'Additional IP service will be deleted, all its IP addresses will be released'
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Additional IP Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Additional IP deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # DNS
+  /dns:
+    get:
+      summary: 'All services list with DNS'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS domains list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: '#/components/schemas/DNS'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create DNS service'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, format: hostname|idn-hostname, example: 'test-domain.net', description: 'Valid domain name' }
+                ip: { type: string, format: ipv4, example: '154.43.12.9', description: 'Valid IP address for generating default DNS records' }
+              required: [ 'name' ]
+      responses:
+        202:
+          description: 'Accepted'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS domain created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 290678, description: 'New DNS service ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # DNS
+  /dns/{serviceID}:
+    get:
+      summary: 'View DNS service data'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'DNS Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS domain information' }
+                  data: { $ref: '#/components/schemas/DNS' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete DNS service'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'DNS Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS domain deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # DNSRecord
+  /dns.record/{serviceID}:
+    get:
+      summary: 'View DNS records of DNS service'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'DNS Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS records list' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 4545908, description: 'DNS record ID' }
+                      host: { type: string, example: 'test-domain.com', description: 'Name of DNS record, either with a domain postfix, or only a prefix, @ and * are also available in the name, must be the correct domain name in the end' }
+                      type: { type: string, example: 'A', enum: [ 'A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'CAA', 'TXT' ], description: 'Record type' }
+                      priority: { type: string, nullable: true, example: null, description: 'Positive number, priority/flag of DNS records for supported types (MX, SRV, CAA)' }
+                      tag: { type: string, nullable: true, example: null, enum: [ 'issue', 'issuewild', 'iodef', 'unknown' ],  description: 'The string required parameter for CAA type records' }
+                      value: { type: string, example: '153.12.13.97', description: 'Value of the DNS record, depending on the type of record, for example, for a record of type A, the value must be the correct IPv4 address' }
+                      timestamp: { type: string, format: date-time, description: 'Record timestamp' }
+                      can:
+                        type: object
+                        properties:
+                          update: { type: boolean, example: true, description: 'Ability to update record' }
+                          delete: { type: boolean, example: true, description: 'Ability to delete record' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create DNS record for DNS service'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'DNS Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                host: { type: string, example: 'test-domain.com', description: 'Name of DNS record, either with a domain postfix, or only a prefix, @ and * are also available in the name, must be the correct domain name in the end' }
+                type: { type: string, example: 'A', enum: [ 'A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'CAA', 'TXT' ], description: 'Record type' }
+                priority: { type: string, nullable: true, example: null, description: 'Positive number, priority/flag of DNS records for supported types (MX, SRV, CAA)' }
+                tag: { type: string, nullable: true, example: null, enum: [ 'issue', 'issuewild', 'iodef', 'unknown' ],  description: 'The string required parameter for CAA type records' }
+                value: { type: string, example: '153.12.13.97', description: 'Value of the DNS record, depending on the type of record, for example, for a record of type A, the value must be the correct IPv4 address' }
+              required: [ 'host', 'type', 'value' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS record created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 4545909, description: 'New DNS record ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # DNSRecord
+  /dns.record/{recordID}:
+    put:
+      summary: 'Update DNS record'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: recordID
+          in: path
+          description: 'DNS record ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority: { type: string, nullable: true, example: null, description: 'Positive number, priority/flag of DNS records for supported types (MX, SRV, CAA)' }
+                tag: { type: string, nullable: true, example: null, enum: [ 'issue', 'issuewild', 'iodef', 'unknown' ],  description: 'The string required parameter for CAA type records' }
+                value: { type: string, example: '153.12.13.97', description: 'Value of the DNS record, depending on the type of record, for example, for a record of type A, the value must be the correct IPv4 address' }
+              required: [ 'value' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS record updated' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete DNS record'
+      tags: [ 'DNS' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: recordID
+          in: path
+          description: 'DNS record ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'DNS record deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Operation
+  /operation:
+    get:
+      summary: 'Operations list'
+      tags: [ 'Billing' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: from
+          in: query
+          description: 'Filter date from'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: 'Filter date to'
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Operation list' }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Operation'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create balance replenishment'
+      tags: [ 'Billing' ]
+      security:
+        - apiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summ: { type: number, example: 100 }
+              required: [ 'summ' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Operation created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 6290678, description: 'Operation ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Operation
+  /operation/{operationID}:
+    get:
+      summary: 'View operation'
+      tags: [ 'Billing' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: operationID
+          in: path
+          description: 'Operation ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Operation information' }
+                  data: { $ref: '#/components/schemas/Operation' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete unpaid replenishment operation'
+      tags: [ 'Billing' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: operationID
+          in: path
+          description: 'Operation ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Operation deleted' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+
+
