@@ -60,9 +60,9 @@ try {
   response envelope (a decoded associative array, or `null` when the endpoint
   returns no payload). The full envelope is available after any call via
   `$api->getLastResponse()`.
-- **Errors** — API errors (`status === "error"`) and non-2xx HTTP statuses are
-  thrown as `Vdsina\ApiException`, carrying the HTTP status code and the parsed
-  `status_msg` / `description` / `data` fields.
+- **Errors** — any failure (transport, malformed JSON, API logical error, or
+  non-2xx HTTP status) is thrown as `Vdsina\ApiException`, carrying the HTTP
+  status code and the parsed `status_msg` / `description` / `data` fields.
 - **Field names** — request/response field names match the OpenAPI schema
   exactly, including hyphenated names (`server-plan`, `ssh-key`, `ip-reserve`).
   PHP method arguments use camelCase and are mapped internally.

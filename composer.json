@@ -5,7 +5,6 @@
     "keywords": ["vdsina", "api", "sdk", "vps", "server", "dns", "client"],
     "homepage": "https://vdsina.com/tech/api",
     "license": "MIT",
-    "version": "1.0.0",
     "require": {
         "php": ">=8.0",
         "ext-curl": "*",

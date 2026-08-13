@@ -88,8 +88,6 @@ class Client
      * @param string $userAgent   User-Agent header.
      * @param array<int, mixed> $curlOptions Additional cURL options (e.g. proxy, SSL
      *                            flags); merged over the SDK defaults.
-     *
-     * @throws ApiException
      */
     public function __construct(
         string $token,
@@ -111,8 +109,6 @@ class Client
      * Returns the decoded envelope of the most recent API response.
      *
      * @return array<string, mixed>|null
-     *
-     * @throws ApiException
      */
     final public function getLastResponse(): ?array
     {
@@ -121,8 +117,6 @@ class Client
 
     /**
      * Returns the HTTP status code of the most recent API response.
-     *
-     * @throws ApiException
      */
     final public function getLastHttpCode(): ?int
     {
@@ -131,8 +125,6 @@ class Client
 
     /**
      * Updates the bearer token used for subsequent requests.
-     *
-     * @throws ApiException
      */
     final public function setToken(string $token): self
     {
@@ -1578,7 +1570,14 @@ class Client
         }
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, $options);
+        if ($ch === false) {
+            throw new ApiException('Failed to initialize cURL session', 0);
+        }
+        if (!curl_setopt_array($ch, $options)) {
+            $curlError = curl_error($ch);
+            curl_close($ch);
+            throw new ApiException('Failed to configure cURL session: ' . $curlError, 0);
+        }
 
         $response = curl_exec($ch);
         $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
