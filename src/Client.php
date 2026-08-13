@@ -117,6 +117,22 @@ final class Client
         return $this->request('GET', '/account.limit');
     }
 
+    /**
+     * Registration of a new account.
+     *
+     * Requires the API token of an existing client and an existing affiliate code.
+     * The owner of the affiliate code must have enabled the ability to register
+     * new accounts (contact provider support for more information).
+     *
+     * @param array $data Data with keys: email (string, required – new client login),
+     *                    code (string, required – partner code)
+     * @return array Response with keys: status, status_msg, data (account and user info)
+     */
+    public function registerAccount(array $data): array
+    {
+        return $this->request('POST', '/register', [], $data);
+    }
+
     // --- SSH Key ---
 
     /**
@@ -265,7 +281,7 @@ final class Client
      *
      * @param array $data Server creation parameters (datacenter, server-plan required;
      *                     optional: name, template, backup, schedule, ssh-key, iso,
-     *                     host, cpu, ram, disk, gpu, ip4)
+     *                     host, cpu, ram, disk, gpu, ip4, ip-reserve)
      * @return array Response with keys: status, status_msg, data (id – new server ID)
      */
     public function createServer(array $data): array
@@ -289,7 +305,8 @@ final class Client
      *
      * @param int $serverId Server ID
      * @param array $data Update data with keys: name (string, required),
-     *                    autoprolong (string '0'|'1'), autorun (string '0'|'1')
+     *                    autoprolong (string '0'|'1'), reserve_ip (string '0'|'1'),
+     *                    autorun (string '0'|'1')
      * @return array Response with keys: status, status_msg
      */
     public function updateServer(int $serverId, array $data): array
@@ -556,6 +573,71 @@ final class Client
     public function deleteAdditionalIpService(int $serviceId): array
     {
         return $this->request('DELETE', '/server-ip/' . $serviceId);
+    }
+
+    /**
+     * Service info with additional IP addresses.
+     *
+     * View a service with additional IP addresses by service ID.
+     *
+     * @param int $serviceId Additional IP Service ID
+     * @return array Response with keys: status, status_msg, data (IPservice object)
+     */
+    public function getAdditionalIpService(int $serviceId): array
+    {
+        return $this->request('GET', '/server-ip/' . $serviceId);
+    }
+
+    /**
+     * Delete additional IP addresses for service.
+     *
+     * Deletes IP addresses by list from the additional IP service.
+     *
+     * @param int $serviceId Additional IP Service ID
+     * @param array $data Data with key: delete (array of IP IDs from IP pool)
+     * @return array Response with keys: status, status_msg
+     */
+    public function deleteAdditionalIpAddresses(int $serviceId, array $data): array
+    {
+        return $this->request('PUT', '/server-ip/' . $serviceId, [], $data);
+    }
+
+    // --- Reserved IP ---
+
+    /**
+     * All services list with reserved IP addresses.
+     *
+     * @return array Response with keys: status, status_msg, data (array of IPservice objects)
+     */
+    public function listReservedIps(): array
+    {
+        return $this->request('GET', '/ip-reserve');
+    }
+
+    /**
+     * Service info with reserved IP address.
+     *
+     * View a service with a reserved IP address by service ID.
+     *
+     * @param int $serviceId Service ID
+     * @return array Response with keys: status, status_msg, data (IPservice object)
+     */
+    public function getReservedIp(int $serviceId): array
+    {
+        return $this->request('GET', '/ip-reserve/' . $serviceId);
+    }
+
+    /**
+     * Delete reserved IP service.
+     *
+     * The reserved IP service will be deleted, its IP address will be released.
+     *
+     * @param int $serviceId Service ID
+     * @return array Response with keys: status, status_msg
+     */
+    public function deleteReservedIp(int $serviceId): array
+    {
+        return $this->request('DELETE', '/ip-reserve/' . $serviceId);
     }
 
     // --- DNS ---

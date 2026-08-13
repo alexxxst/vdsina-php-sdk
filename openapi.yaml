@@ -2,13 +2,13 @@ openapi: 3.0.4
 
 info:
   title: 'VDSina public API'
-  version: 1.2.3.2
+  version: 1.3.0
   contact:
     name: 'Tech Support'
     email: 'support@vdsina.com'
   description: |
     The data format of the incoming request and the returned data: JSON.
-    All dates and timestamps are returned in the Europe/Moscow zone (the time zone in which the API server is located).
+    All dates and timestamps are returned in the GMT+3 zone (the time zone in which the API server is located).
     A permanent authorization token can be obtained in the personal account in viewing the user's account information. The token changes when the user's password is changed.
     The token will have the same access rights as the specified user on whose behalf the token request was made. If you need to restrict actions for API requests, you need to create a separate user in the account with the necessary set of rights and make requests with this user's token.
     OpenAPI scheme: https://userapi.vdsina.com/openapi.yaml
@@ -55,7 +55,7 @@ components:
       properties:
         status: { type: string, default: 'error' }
         status_msg: { type: string, default: 'Unauthorized' }
-        description: { type: string, enum: [ 'Need autorization information', 'Incorrect token' ] }
+        description: { type: string, enum: [ 'Need authorization information', 'Incorrect token' ] }
     '403':
       description: '403 Forbidden'
       type: object
@@ -129,9 +129,9 @@ components:
         id: { type: integer, example: 12345, description: 'Service ID' }
         name: { type: string, example: 'systemrescuecd-6.0.3.iso', description: 'Service name' }
         full_name: { type: string, example: 'ISO #12345 – systemrescuecd-6.0.3.iso', description: 'Service full name' }
-        created: { type: string, format: date, description: 'Service create date' }
-        updated: { type: string, format: date, description: 'Service update date' }
-        end: { type: string, format: date, description: 'Service end date' }
+        created: { type: string, format: date-time, description: 'Service create date' }
+        updated: { type: string, format: date-time, description: 'Service update date' }
+        end: { type: string, format: date-time, description: 'Service end date' }
         status: { $ref: '#/components/schemas/ServiceStatus' }
         status_text: { type: string, description: 'Service status description' }
         file:
@@ -159,9 +159,9 @@ components:
         id: { type: integer, example: 12345, description: 'Service ID' }
         name: { type: string, example: 'IPv4 #12345', description: 'Service name' }
         full_name: { type: string, example: 'IPv4 #12345', description: 'Service full name' }
-        created: { type: string, format: date, description: 'Service create date' }
-        updated: { type: string, format: date, description: 'Service update date' }
-        end: { type: string, format: date, description: 'Service end date' }
+        created: { type: string, format: date-time, description: 'Service create date' }
+        updated: { type: string, format: date-time, description: 'Service update date' }
+        end: { type: string, format: date-time, description: 'Service end date' }
         status: { $ref: '#/components/schemas/ServiceStatus' }
         status_text: { type: string, description: 'Service status description' }
         ip:
@@ -174,8 +174,8 @@ components:
             discriminator:
               propertyName: 'ip.type'
               mapping:
-                4: '#/components/schemas/IPv4s'
-                6: '#/components/schemas/IPv6s'
+                '4': '#/components/schemas/IPv4s'
+                '6': '#/components/schemas/IPv6s'
         server:
           type: object
           properties:
@@ -193,9 +193,10 @@ components:
         id: { type: integer, example: 290230, description: 'Backup ID' }
         name: { type: string, example: 'v283946.server', description: 'Backup name' }
         full_name: { type: string, example: 'Backup #290230 – v283946.server (40 Gb)', description: 'Backup service name' }
-        created: { type: string, format: date, example: '2025-02-21 12:26:32', description: 'Service create date' }
-        updated: { type: string, format: date, example: '2025-02-21 12:28:24', description: 'Service update date' }
-        end: { type: string, format: date, example: '2025-02-22 12:28:23', description: 'Service end date' }
+        created: { type: string, format: date-time, example: '2025-02-21 12:26:32', description: 'Service create date' }
+        updated: { type: string, format: date-time, example: '2025-02-21 12:28:24', description: 'Service update date' }
+        end: { type: string, format: date-time, example: '2025-02-22 12:28:23', description: 'Service end date' }
+        quantity: { type: integer, example: 10, description: 'Backup size in Gb' }
         status: { $ref: '#/components/schemas/ServiceStatus' }
         status_text: { type: string, example: 'Creation (9%) Processing', description: 'Service status description' }
         datacenter: { $ref: '#/components/schemas/Datacenter' }
@@ -244,7 +245,7 @@ components:
           type: object
           nullable: true
           properties:
-            id: { type: integer, example: 123479, description: 'Atached service ID' }
+            id: { type: integer, example: 123479, description: 'Attached service ID' }
             type: { type: string, enum: [ 'server', 'server-ip', 'reserve-ip', 'unknown' ], example: 'server', description: 'Service type' }
             name: { type: string, example: 'IPv4 #123479', description: 'Service name' }
         is_net: { type: boolean, example: false, description: 'Is network' }
@@ -363,9 +364,9 @@ components:
         id: { type: integer, example: 290676, description: 'Domain ID' }
         name: { type: string, example: 'test-domain.com', description: 'Domain name' }
         full_name: { type: string, example: 'DNS #290676 – test-domain.com', description: 'Service name' }
-        created: { type: string, format: date, description: 'Service create date' }
-        updated: { type: string, format: date, description: 'Service update date' }
-        end: { type: string, format: date, description: 'Service end date' }
+        created: { type: string, format: date-time, description: 'Service create date' }
+        updated: { type: string, format: date-time, description: 'Service update date' }
+        end: { type: string, format: date-time, description: 'Service end date' }
         status: { $ref: '#/components/schemas/ServiceStatus' }
         status_text: { type: string, description: 'Service status description' }
         real: { type: boolean, example: true, description: 'DNS servers correctly set up in domain NS records' }
@@ -381,7 +382,7 @@ components:
         purse: { type: string, enum: [ 'real', 'bonus', 'partner' ], example: 'real', description: 'Operation purse' }
         type: { type: integer, enum: [ -1, 1 ], example: 1, description: 'Debit or credit' }
         status: { type: integer, enum: [ 0, 1 ], example: 1, description: 'Paid or not' }
-        summ: { type: string, format: number, example: 100, description: 'Operation summ' }
+        summ: { type: string, example: '100', description: 'Operation summ' }
         created: { type: string, format: date-time, example: '2025-02-22 12:28:23', description: 'Operation create date' }
         updated: { type: string, format: date-time, example: '2025-02-22 12:29:13', description: 'Operation update date' }
         comment: { type: string, example: 'Balance replenishment', description: 'Operation description' }
@@ -417,6 +418,9 @@ tags:
     description: |
       When using various types of schedules for one service together (day and week, for example), it is recommended to set the same hour for backup creation avoid data loss when some type of backup did not created.
   - name: IP address
+  - name: Reserved IP address
+    description: |
+      Reserved IP address created when server deleted.
   - name: Local IP address
     description: |
       Local network is available within the datacenter. This is PUBLIC local network.
@@ -518,9 +522,9 @@ paths:
                     type: object
                     nullable: true
                     properties:
-                      real: { type: string, format: number, example: '105.00', description: 'Real account balance' }
-                      bonus: { type: string, format: number, example: '10.08', description: 'Bonus balance' }
-                      partner: { type: string, format: number, example: '40.34', description: 'Affiliate program balance' }
+                      real: { type: string, example: '105.00', description: 'Real account balance' }
+                      bonus: { type: string, example: '10.08', description: 'Bonus balance' }
+                      partner: { type: string, example: '40.34', description: 'Affiliate program balance' }
         4XX:
           description: 'Client errors'
           content:
@@ -629,7 +633,7 @@ paths:
               type: object
               properties:
                 email: { type: string, example: 'user@domain.tld', format: email, description: 'Client user login name' }
-                password: { type: string, example: 'Pas$W0rD', format: password, description: 'Client user password' }
+                password: { type: string, example: 'Pas$W0rD', description: 'Client user password' }
               required: [ 'email', 'password' ]
       responses:
         200:
@@ -893,17 +897,17 @@ paths:
                           properties:
                             cpu:
                               type: object
-                              description: 'Minumum CPUs for this template'
+                              description: 'Minimum CPUs for this template'
                               properties:
                                 min: { type: integer, example: 1 }
                             ram:
                               type: object
-                              description: 'Minumum RAM for this template'
+                              description: 'Minimum RAM for this template'
                               properties:
                                 min: { type: integer, example: 1 }
                             disk:
                               type: object
-                              description: 'Minumum Storage for this template'
+                              description: 'Minimum Storage for this template'
                               properties:
                                 min: { type: integer, example: 5 }
         4XX:
@@ -1131,7 +1135,7 @@ paths:
               type: object
               properties:
                 name: { type: string, example: 'My SSH key', description: 'SSH key name' }
-                data: { type: string, example: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQ...', description: 'Key string represenatation' }
+                data: { type: string, example: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQ...', description: 'Key string representation' }
               required: [ 'name', 'data' ]
       responses:
         201:
@@ -1457,7 +1461,6 @@ paths:
           required: true
           schema:
             type: string
-            format: string
             pattern: '^[0-9a-f]{32}$'
           style: simple
       responses:
@@ -1514,7 +1517,6 @@ paths:
           required: true
           schema:
             type: string
-            format: string
             pattern: '^[0-9a-f]{32}$'
           style: simple
       responses:
@@ -1687,9 +1689,9 @@ paths:
                         id: { type: integer, example: 12345, description: 'Server ID' }
                         name: { type: string, example: 'Server #12345', description: 'Server name' }
                         full_name: { type: string, example: 'Server 2 RAM / 1 CPU / 40 NVMe #12345', description: 'Service name' }
-                        created: { type: string, format: date, description: 'Service create date' }
-                        updated: { type: string, format: date, description: 'Service update date' }
-                        end: { type: string, format: date, description: 'Service end date' }
+                        created: { type: string, format: date-time, description: 'Service create date' }
+                        updated: { type: string, format: date-time, description: 'Service update date' }
+                        end: { type: string, format: date-time, description: 'Service end date' }
                         status: { $ref: '#/components/schemas/ServiceStatus' }
                         status_text: { type: string, description: 'Service status description' }
                         ip:
@@ -1701,8 +1703,8 @@ paths:
                           discriminator:
                             propertyName: 'ip.type'
                             mapping:
-                              4: '#/components/schemas/IPv4s'
-                              6: '#/components/schemas/IPv6s'
+                              '4': '#/components/schemas/IPv4s'
+                              '6': '#/components/schemas/IPv6s'
                         server-plan:
                           type: object
                           properties:
@@ -1772,6 +1774,7 @@ paths:
                 disk: { type: integer, nullable: true, example: 40, description: 'Amount of storage in GBs, if tariff plan supports parameter settings' }
                 gpu: { type: integer, nullable: true, example: 1, description: 'Number of GPUs, if tariff plan supports parameter settings' }
                 ip4: { type: string, nullable: true, example: '1', enum: [ '0', '1' ], description: '0 or 1, for order IPv4 for server, if tariff plan supports parameter settings' }
+                ip-reserve: { type: integer, example: 155, description: 'Reserved IP service ID' }
               required: [ 'datacenter', 'server-plan' ]
       responses:
         202:
@@ -1847,9 +1850,9 @@ paths:
                       id: { type: integer, example: 12345, description: 'Server ID' }
                       name: { type: string, example: 'Server #12345', description: 'Server name' }
                       full_name: { type: string, example: 'Server 2 RAM / 1 CPU / 40 NVMe #12345', description: 'Service name' }
-                      created: { type: string, format: date, description: 'Service create date' }
-                      updated: { type: string, format: date, description: 'Service update date' }
-                      end: { type: string, format: date, description: 'Service end date' }
+                      created: { type: string, format: date-time, description: 'Service create date' }
+                      updated: { type: string, format: date-time, description: 'Service update date' }
+                      end: { type: string, format: date-time, description: 'Service end date' }
                       status: { $ref: '#/components/schemas/ServiceStatus' }
                       status_text: { type: string, description: 'Service status description' }
                       autoprolong: { type: boolean, example: true, description: 'Automatic prolongation' }
@@ -1863,8 +1866,8 @@ paths:
                         discriminator:
                           propertyName: 'ip.type'
                           mapping:
-                            4: '#/components/schemas/IPv4s'
-                            6: '#/components/schemas/IPv6s'
+                            '4': '#/components/schemas/IPv4s'
+                            '6': '#/components/schemas/IPv6s'
                       ip_local:
                         type: object
                         nullable: true
@@ -1872,6 +1875,7 @@ paths:
                           ip: { type: string, format: ipv4, example: '10.13.2.172', description: 'Local IP address' }
                           netmask: { type: string, format: ipv4, example: '255.255.0.0', description: 'Local IP netmask' }
                           mac: { type: string, example: '56:00:00:04:55:2a', description: 'Local interface MAC address' }
+                      reserve_ip: { type: boolean, example: true, description: 'Automatic IP reserve creation' }
                       host: { type: string, format: hostname, example: 'super.server.host', description: 'Server hostname' }
                       data: { $ref: '#/components/schemas/Tariff' }
                       server-plan:
@@ -1951,7 +1955,8 @@ paths:
               type: object
               properties:
                 name: { type: string, example: 'New server name', description: 'Server name' }
-                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Server automatic ptolongation option' }
+                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Server automatic prolongation option' }
+                reserve_ip: { type: string, example: '1', default: '0', enum: [ '0', '1' ], description: 'Server automatic IP reserve creation option' }
                 autorun: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Server automatic start option' }
               required: [ 'name' ]
       responses:
@@ -2241,7 +2246,7 @@ paths:
             schema:
               type: object
               properties:
-                password: { type: string, format: password, description: 'Server superuser password' }
+                password: { type: string, description: 'Server superuser password' }
               required: [ 'password' ]
       responses:
         200:
@@ -2612,7 +2617,10 @@ paths:
                 properties:
                   status: { type: string, default: 'ok' }
                   status_msg: { type: string, default: 'Backup list' }
-                  data: { $ref: '#/components/schemas/Backup' }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Backup'
         4XX:
           description: 'Client errors'
           content:
@@ -2711,7 +2719,7 @@ paths:
               type: object
               properties:
                 name: { type: string, example: 'New backup name', description: 'Backup name' }
-                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Backup automatic ptolongation option' }
+                autoprolong: { type: string, example: '1', default: '1', enum: [ '0', '1' ], description: 'Backup automatic prolongation option' }
               required: [ 'name' ]
       responses:
         200:
@@ -3333,8 +3341,8 @@ paths:
                       discriminator:
                         propertyName: 'ip.type'
                         mapping:
-                          4: '#/components/schemas/IPv4p'
-                          6: '#/components/schemas/IPv6p'
+                          '4': '#/components/schemas/IPv4p'
+                          '6': '#/components/schemas/IPv6p'
         4XX:
           description: 'Client errors'
           content:
@@ -3395,8 +3403,158 @@ paths:
                     discriminator:
                       propertyName: 'data.type'
                       mapping:
-                        4: '#/components/schemas/IPv4p'
-                        6: '#/components/schemas/IPv6p'
+                        '4': '#/components/schemas/IPv4p'
+                        '6': '#/components/schemas/IPv6p'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Reserved IP
+  /ip-reserve:
+    get:
+      summary: 'All services list with reserved IP addresses'
+      tags: [ 'Reserved IP address' ]
+      security:
+        - apiKey: [ ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Reserved IP list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: '#/components/schemas/IPservice'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # Reserved IP
+  /ip-reserve/{serviceID}:
+    get:
+      summary: 'Service info with reserved IP address'
+      description: 'View service with reserved IP address by service ID'
+      tags: [ 'Reserved IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Reserved IP information' }
+                  data: { $ref: '#/components/schemas/IPservice' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete reserved IP service'
+      description: 'Reserved IP service will be deleted, its IP address will be released'
+      tags: [ 'Reserved IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Additional IP Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Reserved IP deleted' }
         4XX:
           description: 'Client errors'
           content:
@@ -3647,6 +3805,56 @@ paths:
 
   # IP
   /server-ip/{serviceID}:
+    get:
+      summary: 'Service info with additional IP addresses'
+      description: 'View service with additional IP addresses by service ID'
+      tags: [ 'IP address' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: serviceID
+          in: path
+          description: 'Service ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'Additional IP information' }
+                  data: { $ref: '#/components/schemas/IPservice' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
     put:
       summary: 'Delete additional IP addresses for service'
       description: 'Delete IP addresses by list from additional IP service'
@@ -3814,7 +4022,7 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string, format: hostname|idn-hostname, example: 'test-domain.net', description: 'Valid domain name' }
+                name: { type: string, format: hostname, example: 'test-domain.net', description: 'Valid domain name' }
                 ip: { type: string, format: ipv4, example: '154.43.12.9', description: 'Valid IP address for generating default DNS records' }
               required: [ 'name' ]
       responses:
@@ -3984,21 +4192,23 @@ paths:
                   status: { type: string, default: 'ok' }
                   status_msg: { type: string, default: 'DNS records list' }
                   data:
-                    type: object
+                    type: array
                     nullable: true
-                    properties:
-                      id: { type: integer, example: 4545908, description: 'DNS record ID' }
-                      host: { type: string, example: 'test-domain.com', description: 'Name of DNS record, either with a domain postfix, or only a prefix, @ and * are also available in the name, must be the correct domain name in the end' }
-                      type: { type: string, example: 'A', enum: [ 'A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'CAA', 'TXT' ], description: 'Record type' }
-                      priority: { type: string, nullable: true, example: null, description: 'Positive number, priority/flag of DNS records for supported types (MX, SRV, CAA)' }
-                      tag: { type: string, nullable: true, example: null, enum: [ 'issue', 'issuewild', 'iodef', 'unknown' ],  description: 'The string required parameter for CAA type records' }
-                      value: { type: string, example: '153.12.13.97', description: 'Value of the DNS record, depending on the type of record, for example, for a record of type A, the value must be the correct IPv4 address' }
-                      timestamp: { type: string, format: date-time, description: 'Record timestamp' }
-                      can:
-                        type: object
-                        properties:
-                          update: { type: boolean, example: true, description: 'Ability to update record' }
-                          delete: { type: boolean, example: true, description: 'Ability to delete record' }
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 4545908, description: 'DNS record ID' }
+                        host: { type: string, example: 'test-domain.com', description: 'Name of DNS record, either with a domain postfix, or only a prefix, @ and * are also available in the name, must be the correct domain name in the end' }
+                        type: { type: string, example: 'A', enum: [ 'A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'CAA', 'TXT' ], description: 'Record type' }
+                        priority: { type: string, nullable: true, example: null, description: 'Positive number, priority/flag of DNS records for supported types (MX, SRV, CAA)' }
+                        tag: { type: string, nullable: true, example: null, enum: [ 'issue', 'issuewild', 'iodef', 'unknown' ],  description: 'The string required parameter for CAA type records' }
+                        value: { type: string, example: '153.12.13.97', description: 'Value of the DNS record, depending on the type of record, for example, for a record of type A, the value must be the correct IPv4 address' }
+                        timestamp: { type: string, format: date-time, description: 'Record timestamp' }
+                        can:
+                          type: object
+                          properties:
+                            update: { type: boolean, example: true, description: 'Ability to update record' }
+                            delete: { type: boolean, example: true, description: 'Ability to delete record' }
         4XX:
           description: 'Client errors'
           content:
@@ -4416,6 +4626,3 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Generic'
-
-
-
