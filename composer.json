@@ -1,16 +1,23 @@
 {
     "name": "vdsina/php-sdk",
-    "description": "Compact PHP SDK for VDSina public API",
-    "version": "1.0.1",
+    "description": "Compact, dependency-free PHP SDK for the VDSina public API (userapi.vdsina.com).",
     "type": "library",
+    "keywords": ["vdsina", "api", "sdk", "vps", "server", "dns", "client"],
+    "homepage": "https://vdsina.com/tech/api",
     "license": "MIT",
+    "version": "1.0.0",
     "require": {
-        "php": ">=8.0.0",
-        "ext-curl": "*"
+        "php": ">=8.0",
+        "ext-curl": "*",
+        "ext-json": "*"
     },
     "autoload": {
         "psr-4": {
-            "VDSina\\Client\\": "src"
+            "Vdsina\\": "src/"
         }
-    }
+    },
+    "scripts": {
+        "lint": "php -l src/Client.php && php -l src/ApiException.php"
+    },
+    "minimum-stability": "stable"
 }
