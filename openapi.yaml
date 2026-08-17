@@ -3514,7 +3514,7 @@ paths:
             schema:
               type: object
               properties:
-                ip: { type: string, format: ipv4|ipv6, example: '127.0.0.1', description: 'PTR record IP (must be from origin subnet/address)' }
+                ip: { type: string, example: '127.0.0.1', description: 'PTR record IP (must be from origin subnet/address)' }
                 host: { type: string, format: hostname, example: 'localhost.com', description: 'PTR record host' }
               required: [ 'ip', 'host' ]
       responses:
@@ -3588,7 +3588,7 @@ paths:
                 type: object
                 properties:
                   status: { type: string, default: 'ok' }
-                  status_msg: { type: string, default: 'SSH key updated' }
+                  status_msg: { type: string, default: 'PTR record updated' }
         4XX:
           description: 'Client errors'
           content:
