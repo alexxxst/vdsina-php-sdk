@@ -1108,6 +1108,77 @@ class Client
     }
 
     // ---------------------------------------------------------------------
+    // PTR records
+    // ---------------------------------------------------------------------
+
+    /**
+     * Lists PTR records for an IP address (GET /ip.ptr/{ipID}).
+     *
+     * @param int $ipId IP address ID from the IP pool.
+     *
+     * @return array<int, array{
+     *     id: int,
+     *     ip: string,
+     *     host: string,
+     *     updated: string
+     * }>|null
+     *
+     * @throws ApiException
+     */
+    final public function getIpPtrRecords(int $ipId): ?array
+    {
+        return $this->request('GET', '/ip.ptr/' . $ipId);
+    }
+
+    /**
+     * Creates a PTR record for an IP address (POST /ip.ptr/{ipID}).
+     *
+     * @param int    $ipId IP address ID from the IP pool.
+     * @param string $ip   PTR record IP (must belong to the origin subnet/address).
+     * @param string $host PTR record hostname.
+     *
+     * @return array{id: int}|null The new PTR record ID.
+     *
+     * @throws ApiException
+     */
+    final public function createIpPtrRecord(int $ipId, string $ip, string $host): ?array
+    {
+        return $this->request('POST', '/ip.ptr/' . $ipId, [], [
+            'ip' => $ip,
+            'host' => $host,
+        ]);
+    }
+
+    /**
+     * Updates a PTR record (PUT /ip.ptr/{ptrID}).
+     *
+     * @param int    $ptrId PTR record ID.
+     * @param string $host  New PTR record hostname.
+     *
+     * @return array|null
+     *
+     * @throws ApiException
+     */
+    final public function updateIpPtrRecord(int $ptrId, string $host): ?array
+    {
+        return $this->request('PUT', '/ip.ptr/' . $ptrId, [], ['host' => $host]);
+    }
+
+    /**
+     * Deletes a PTR record (DELETE /ip.ptr/{ptrID}).
+     *
+     * @param int $ptrId PTR record ID.
+     *
+     * @return array|null
+     *
+     * @throws ApiException
+     */
+    final public function deleteIpPtrRecord(int $ptrId): ?array
+    {
+        return $this->request('DELETE', '/ip.ptr/' . $ptrId);
+    }
+
+    // ---------------------------------------------------------------------
     // Reserved IP address
     // ---------------------------------------------------------------------
 

@@ -155,6 +155,14 @@ try {
 | `getIps()` | `GET /ip` |
 | `getIp(int $ipId)` | `GET /ip/{ipID}` |
 
+### PTR records for IP
+| Method | HTTP |
+|---|---|
+| `getIpPtrRecords(int $ipId)` | `GET /ip.ptr/{ipID}` |
+| `createIpPtrRecord(int $ipId, string $ip, string $host)` | `POST /ip.ptr/{ipID}` |
+| `updateIpPtrRecord(int $ptrId, string $host)` | `PUT /ip.ptr/{ptrID}` |
+| `deleteIpPtrRecord(int $ptrId)` | `DELETE /ip.ptr/{ptrID}` |
+
 ### Reserved IP address
 | Method | HTTP |
 |---|---|

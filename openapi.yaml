@@ -2,7 +2,7 @@ openapi: 3.0.4
 
 info:
   title: 'VDSina public API'
-  version: 1.3.0
+  version: 1.3.1
   contact:
     name: 'Tech Support'
     email: 'support@vdsina.com'
@@ -418,6 +418,9 @@ tags:
     description: |
       When using various types of schedules for one service together (day and week, for example), it is recommended to set the same hour for backup creation avoid data loss when some type of backup did not created.
   - name: IP address
+  - name: PTR records for IP
+    description: |
+      One IP address may have one PTR record. For IPv6 you may create PTR record for any address within subnet.
   - name: Reserved IP address
     description: |
       Reserved IP address created when server deleted.
@@ -3405,6 +3408,235 @@ paths:
                       mapping:
                         '4': '#/components/schemas/IPv4p'
                         '6': '#/components/schemas/IPv6p'
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+
+  # IPptr
+  /ip.ptr/{ipID}:
+    get:
+      summary: 'IP PTR information'
+      tags: [ 'PTR records for IP' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: ipID
+          in: path
+          description: 'IP ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'IP PTR list' }
+                  data:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, example: 1, description: 'PTR record ID' }
+                        ip: { type: string, example: '127.0.0.1', description: 'PTR record IP' }
+                        host: { type: string, format: hostname, example: 'localhost.net', description: 'PTR record host' }
+                        updated: { type: string, format: date-time, description: 'Updated datetime for record' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    post:
+      summary: 'Create PTR record'
+      tags: [ 'PTR records for IP' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: ipID
+          in: path
+          description: 'IP ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ip: { type: string, format: ipv4|ipv6, example: '127.0.0.1', description: 'PTR record IP (must be from origin subnet/address)' }
+                host: { type: string, format: hostname, example: 'localhost.com', description: 'PTR record host' }
+              required: [ 'ip', 'host' ]
+      responses:
+        201:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'PTR record created' }
+                  data:
+                    type: object
+                    nullable: true
+                    properties:
+                      id: { type: integer, example: 5, description: 'PTR record ID' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    put:
+      summary: 'Update PTR record'
+      tags: [ 'PTR records for IP' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: ptrID
+          in: path
+          description: 'PTR record ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                host: { type: string, format: hostname, example: 'localhost.com', description: 'PTR record host' }
+              required: [ 'host' ]
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'SSH key updated' }
+        4XX:
+          description: 'Client errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/400'
+                  - $ref: '#/components/schemas/401'
+                  - $ref: '#/components/schemas/403'
+                  - $ref: '#/components/schemas/404'
+                  - $ref: '#/components/schemas/405'
+        5XX:
+          description: 'Server errors'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/500'
+                  - $ref: '#/components/schemas/501'
+        default:
+          description: 'Other generic HTTP statuses'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generic'
+    delete:
+      summary: 'Delete PTR record'
+      tags: [ 'PTR records for IP' ]
+      security:
+        - apiKey: [ ]
+      parameters:
+        - name: ptrID
+          in: path
+          description: 'PTR record ID'
+          required: true
+          schema:
+            type: integer
+          style: simple
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, default: 'ok' }
+                  status_msg: { type: string, default: 'PTR record deleted' }
         4XX:
           description: 'Client errors'
           content:
