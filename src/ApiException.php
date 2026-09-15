@@ -14,10 +14,12 @@ use Throwable;
  * The exception carries the parsed error details from the API envelope
  * (`status_msg`, `description`, `data`) so callers can react precisely.
  */
-class ApiException extends RuntimeException
+final class ApiException extends RuntimeException
 {
     /**
-     * HTTP status code of the failed response (0 for transport errors).
+     * HTTP status code of the failed response (null when the error is
+     * transport-level or the code is otherwise unavailable; note that the
+     * inherited {@see getCode()} reports it as 0 in that case).
      */
     private ?int $statusCode;
 
@@ -40,7 +42,7 @@ class ApiException extends RuntimeException
 
     /**
      * @param string          $message       Main error message (title and/or description).
-     * @param int|null        $statusCode    HTTP status code (0 when the error is transport-level).
+     * @param int|null        $statusCode    HTTP status code (null when the error is transport-level).
      * @param string|null     $statusMessage API `status_msg` value.
      * @param string|null     $description   API `description` value.
      * @param mixed           $data          API `data` value (structured per-property errors).
@@ -65,7 +67,7 @@ class ApiException extends RuntimeException
     /**
      * HTTP status code of the failed response, or null if unavailable.
      */
-    final public function getStatusCode(): ?int
+    public function getStatusCode(): ?int
     {
         return $this->statusCode;
     }
@@ -73,7 +75,7 @@ class ApiException extends RuntimeException
     /**
      * Short error title (`status_msg`) returned by the API.
      */
-    final public function getStatusMessage(): ?string
+    public function getStatusMessage(): ?string
     {
         return $this->statusMessage;
     }
@@ -81,7 +83,7 @@ class ApiException extends RuntimeException
     /**
      * Human-readable error description returned by the API.
      */
-    final public function getDescription(): ?string
+    public function getDescription(): ?string
     {
         return $this->description;
     }
@@ -91,7 +93,7 @@ class ApiException extends RuntimeException
      *
      * @return mixed
      */
-    final public function getData(): mixed
+    public function getData(): mixed
     {
         return $this->data;
     }

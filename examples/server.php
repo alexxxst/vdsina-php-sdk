@@ -22,17 +22,17 @@ $api = new Client($argv[1]);
 
 try {
     // List servers.
-    $servers = $api->getServers();
-    printf("You have %d server(s):\n", count($servers ?? []));
+    $servers = $api->getServers() ?? [];
+    printf("You have %d server(s):\n", count($servers));
     foreach ($servers as $server) {
         printf("  #%d %s [%s]\n", $server['id'], $server['name'], $server['status']);
     }
 
     // Pick a tariff plan group and a datacenter for a new server.
-    $groups = $api->getServerGroups();
+    $groups = $api->getServerGroups() ?? [];
     $group = $groups[0]['id'] ?? null;
-    $plans = $group !== null ? $api->getServerPlans($group) : [];
-    $datacenters = $api->getDatacenters();
+    $plans = $group !== null ? ($api->getServerPlans($group) ?? []) : [];
+    $datacenters = $api->getDatacenters() ?? [];
 
     if ($plans === [] || $datacenters === []) {
         fwrite(STDOUT, "No plans/datacenters available; skipping creation.\n");

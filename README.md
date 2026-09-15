@@ -33,12 +33,12 @@ $api = new Client('your-api-token');
 // Optional configuration (all shown with their defaults):
 $api = new Client(
     'your-api-token',
-    'userapi.vdsina.com',   // host — may be 'userapi.vdsina.com' or a full URL
-    'v1',                  // API version
+    'userapi.vdsina.com',   // host — a hostname or a full URL (a path in the host is used as the complete base)
+    'v1',                  // API version (not appended when the host already contains a path)
     'https',               // scheme used when the host has none
     30,                    // timeout (seconds)
-    'vdsina-php-sdk/1.0.0',// User-Agent
-    []                     // extra cURL options (proxy, SSL flags, ...)
+    'vdsina-php-sdk/1.1.0',// User-Agent (Client::DEFAULT_USER_AGENT)
+    []                     // extra cURL options (proxy, SSL flags, ...); merged over the defaults
 );
 
 try {
@@ -58,8 +58,10 @@ try {
 
 - **Return value** — every method returns the `data` member of the API
   response envelope (a decoded associative array, or `null` when the endpoint
-  returns no payload). The full envelope is available after any call via
-  `$api->getLastResponse()`.
+  returns no payload). The full envelope of the most recent response is
+  available via `$api->getLastResponse()` and its HTTP code via
+  `$api->getLastHttpCode()`; both are reset to `null` when a request fails at
+  the transport level or returns malformed JSON.
 - **Errors** — any failure (transport, malformed JSON, API logical error, or
   non-2xx HTTP status) is thrown as `Vdsina\ApiException`, carrying the HTTP
   status code and the parsed `status_msg` / `description` / `data` fields.
@@ -68,6 +70,8 @@ try {
   PHP method arguments use camelCase and are mapped internally.
 - **Nothing is hard-coded** — host, API version, scheme, timeout, User-Agent
   and extra cURL options are all configurable via the constructor.
+- **Transport** — compressed responses (`gzip` / `deflate`) are negotiated and
+  decompressed by cURL transparently.
 
 ## Method reference
 
@@ -213,6 +217,14 @@ snippets:
 - [`account.php`](examples/account.php) — account, balance, limits and helpers.
 - [`server.php`](examples/server.php) — create, inspect and manage servers.
 - [`dns.php`](examples/dns.php) — DNS services and records.
+
+Make sure the autoloader exists first (`composer install`), then run any
+example with your API token:
+
+```bash
+composer install
+php examples/account.php <API_TOKEN>
+```
 
 ## License
 

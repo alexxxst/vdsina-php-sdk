@@ -31,7 +31,7 @@ try {
     $recordId = $record['id'];
 
     // List all records of the service.
-    foreach ($api->getDnsRecords($serviceId) as $r) {
+    foreach ($api->getDnsRecords($serviceId) ?? [] as $r) {
         printf("  [%s] %s -> %s\n", $r['type'], $r['host'], $r['value']);
     }
 

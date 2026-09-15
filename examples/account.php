@@ -28,7 +28,7 @@ try {
     printf("Shutdown forecast: %s\n", $account['forecast'] ?? 'n/a');
 
     // Balances.
-    $balance = $api->getBalance();
+    $balance = $api->getBalance() ?? [];
     printf("Balance: real=%s bonus=%s partner=%s\n",
         $balance['real'] ?? '0',
         $balance['bonus'] ?? '0',
@@ -36,18 +36,19 @@ try {
     );
 
     // Account limits.
-    $limits = $api->getLimits();
-    printf("Servers: %d/%d\n", $limits['server']['now'], $limits['server']['max']);
+    $limits = $api->getLimits() ?? [];
+    $serverLimit = $limits['server'] ?? ['now' => 0, 'max' => 0];
+    printf("Servers: %d/%d\n", $serverLimit['now'], $serverLimit['max']);
 
     // Datacenters.
-    foreach ($api->getDatacenters() as $dc) {
+    foreach ($api->getDatacenters() ?? [] as $dc) {
         printf("Datacenter %d: %s (%s) active=%s\n",
             $dc['id'], $dc['name'], $dc['country'], $dc['active'] ? 'yes' : 'no'
         );
     }
 
     // Tariff plan groups.
-    foreach ($api->getServerGroups() as $group) {
+    foreach ($api->getServerGroups() ?? [] as $group) {
         printf("Group %d: %s active=%s\n", $group['id'], $group['name'], $group['active'] ? 'yes' : 'no');
     }
 } catch (ApiException $e) {

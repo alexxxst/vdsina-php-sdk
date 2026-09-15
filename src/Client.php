@@ -38,6 +38,16 @@ use JsonException;
 class Client
 {
     /**
+     * SDK version.
+     */
+    public const VERSION = '1.1.0';
+
+    /**
+     * Default User-Agent header value.
+     */
+    public const DEFAULT_USER_AGENT = 'vdsina-php-sdk/' . self::VERSION;
+
+    /**
      * API bearer token.
      */
     private string $token;
@@ -78,10 +88,11 @@ class Client
 
     /**
      * @param string $token       Permanent API token (obtained in the control panel).
-     * @param string $host        Target host, e.g. "userapi.vdsina.com" or
-     *                            "userapi.vdsina.com". May include a scheme; if it
-     *                            does not, `$scheme` is prepended. A trailing "/" is
-     *                            stripped automatically.
+     * @param string $host        Target host, e.g. "userapi.vdsina.com". May include
+     *                            a scheme; if it does not, `$scheme` is prepended. A
+     *                            trailing "/" is stripped automatically. If the host
+     *                            already contains a path, it is used as the complete
+     *                            base URL and `$version` is not appended.
      * @param string $version     API version prefix, default "v1".
      * @param string $scheme      URL scheme used when `$host` has none ("https"/"http").
      * @param int    $timeout     Request timeout in seconds.
@@ -95,7 +106,7 @@ class Client
         string $version = 'v1',
         string $scheme = 'https',
         int $timeout = 30,
-        string $userAgent = 'vdsina-php-sdk/1.0.0',
+        string $userAgent = self::DEFAULT_USER_AGENT,
         array $curlOptions = []
     ) {
         $this->token = $token;
@@ -462,7 +473,20 @@ class Client
      *
      * @param int $isoId ISO service ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     file: array{size: string, md5: string},
+     *     attached: bool,
+     *     server: array{id: int, name: string}|null,
+     *     can: array{delete: bool}
+     * }|null
      *
      * @throws ApiException
      */
@@ -608,7 +632,42 @@ class Client
      *
      * @param int $serverId Server ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     autoprolong: bool,
+     *     autorun: bool,
+     *     ip: array{id: int, ip: string, type: string}|null,
+     *     ip_local: array{ip: string, netmask: string, mac: string}|null,
+     *     reserve_ip: bool,
+     *     host: string,
+     *     data: array{
+     *         cpu: array{value: int, for: string},
+     *         ram: array{value: float, bytes: int, for: string},
+     *         disk: array{value: int, bytes: int, for: string},
+     *         gpu: array{value: int, for: string}|null,
+     *         traff: array{value: int, bytes: int, for: string}
+     *     },
+     *     'server-plan': array{id: int, name: string},
+     *     template: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     'ssh-key': array{id: int, name: string}|null,
+     *     can: array{
+     *         reboot: bool,
+     *         update: bool,
+     *         delete: bool,
+     *         prolong: bool,
+     *         backup: bool,
+     *         ip_local: bool
+     *     },
+     *     bandwidth: array{current_month: int, last_month: int}
+     * }|null
      *
      * @throws ApiException
      */
@@ -705,6 +764,10 @@ class Client
         }
         if ($host !== null) {
             $body['host'] = $host;
+        }
+
+        if (count($body) === 0) {
+            $body = null;
         }
 
         return $this->request('PUT', '/server.reinstall/' . $serverId, [], $body);
@@ -870,7 +933,20 @@ class Client
     /**
      * List of backups (GET /backup).
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     quantity: int,
+     *     status: string,
+     *     status_text: string,
+     *     datacenter: array{id: int, name: string, country: string},
+     *     server: array{id: int, name: string}|null,
+     *     can: array{update: bool, prolong: bool, delete: bool}
+     * }>|null
      *
      * @throws ApiException
      */
@@ -884,7 +960,20 @@ class Client
      *
      * @param int $backupId Backup ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     quantity: int,
+     *     status: string,
+     *     status_text: string,
+     *     datacenter: array{id: int, name: string, country: string},
+     *     server: array{id: int, name: string}|null,
+     *     can: array{update: bool, prolong: bool, delete: bool}
+     * }|null
      *
      * @throws ApiException
      */
@@ -1084,7 +1173,17 @@ class Client
     /**
      * List of all IP addresses assigned to the client (GET /ip).
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     ip: string,
+     *     type: string,
+     *     host: string,
+     *     gateway: string,
+     *     netmask: string,
+     *     datacenter: array{id: int, name: string, country: string},
+     *     service: array{id: int, type: string, name: string}|null,
+     *     is_net: bool
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1098,7 +1197,17 @@ class Client
      *
      * @param int $ipId IP ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     ip: string,
+     *     type: string,
+     *     host: string,
+     *     gateway: string,
+     *     netmask: string,
+     *     datacenter: array{id: int, name: string, country: string},
+     *     service: array{id: int, type: string, name: string}|null,
+     *     is_net: bool
+     * }|null
      *
      * @throws ApiException
      */
@@ -1185,7 +1294,20 @@ class Client
     /**
      * List of services with reserved IP addresses (GET /ip-reserve).
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     ip: array<int, array{id: int, ip: string, type: string}>|null,
+     *     server: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     can: array{delete: bool}
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1199,7 +1321,20 @@ class Client
      *
      * @param int $serviceId Reserved IP service ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     ip: array<int, array{id: int, ip: string, type: string}>|null,
+     *     server: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     can: array{delete: bool}
+     * }|null
      *
      * @throws ApiException
      */
@@ -1229,7 +1364,20 @@ class Client
     /**
      * List of all services with additional IP addresses (GET /server-ip).
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     ip: array<int, array{id: int, ip: string, type: string}>|null,
+     *     server: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     can: array{delete: bool}
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1243,7 +1391,20 @@ class Client
      *
      * @param int $serverId Parent server ID.
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     ip: array<int, array{id: int, ip: string, type: string}>|null,
+     *     server: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     can: array{delete: bool}
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1295,7 +1456,20 @@ class Client
      *
      * @param int $serviceId Additional IP service ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     ip: array<int, array{id: int, ip: string, type: string}>|null,
+     *     server: array{id: int, name: string},
+     *     datacenter: array{id: int, name: string, country: string},
+     *     can: array{delete: bool}
+     * }|null
      *
      * @throws ApiException
      */
@@ -1342,7 +1516,18 @@ class Client
     /**
      * List of all DNS services (GET /dns).
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     real: bool,
+     *     can: array{delete: bool}
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1376,7 +1561,18 @@ class Client
      *
      * @param int $serviceId DNS service ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     full_name: string,
+     *     created: string,
+     *     updated: string,
+     *     end: string,
+     *     status: string,
+     *     status_text: string,
+     *     real: bool,
+     *     can: array{delete: bool}
+     * }|null
      *
      * @throws ApiException
      */
@@ -1508,7 +1704,20 @@ class Client
      * @param string|null $from Filter date from.
      * @param string|null $to   Filter date to.
      *
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array{
+     *     id: int,
+     *     purse: string,
+     *     type: int,
+     *     status: int,
+     *     summ: string,
+     *     created: string,
+     *     updated: string,
+     *     comment: string,
+     *     payment: array{type: string, name: string}|null,
+     *     service: array{id: int}|null,
+     *     paylink: string|null,
+     *     pdf: string|null
+     * }>|null
      *
      * @throws ApiException
      */
@@ -1544,7 +1753,20 @@ class Client
      *
      * @param int $operationId Operation ID.
      *
-     * @return array<string, mixed>|null
+     * @return array{
+     *     id: int,
+     *     purse: string,
+     *     type: int,
+     *     status: int,
+     *     summ: string,
+     *     created: string,
+     *     updated: string,
+     *     comment: string,
+     *     payment: array{type: string, name: string}|null,
+     *     service: array{id: int}|null,
+     *     paylink: string|null,
+     *     pdf: string|null
+     * }|null
      *
      * @throws ApiException
      */
@@ -1587,6 +1809,9 @@ class Client
      */
     private function request(string $method, string $path, array $query = [], ?array $body = null): ?array
     {
+        $this->lastResponse = null;
+        $this->lastHttpCode = null;
+
         $url = $this->baseUrl . $path;
         if ($query !== []) {
             $url .= '?' . http_build_query($query);
@@ -1605,6 +1830,7 @@ class Client
             CURLOPT_CONNECTTIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_USERAGENT => $this->userAgent,
+            CURLOPT_ENCODING => '',
         ];
 
         switch ($method) {
@@ -1736,6 +1962,13 @@ class Client
             $host = $scheme . '://' . $host;
         }
         $version = trim($version, '/');
+
+        // A path already present in the host is treated as the complete base,
+        // so the version prefix is not appended a second time.
+        $path = parse_url($host, PHP_URL_PATH);
+        if ($version === '' || (is_string($path) && $path !== '' && $path !== '/')) {
+            return $host;
+        }
 
         return $host . '/' . $version;
     }
