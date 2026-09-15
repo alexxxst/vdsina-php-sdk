@@ -6,15 +6,61 @@ surface using only `curl` + `json` extensions and requires **PHP 8.0+**.
 
 ## Installation
 
+### Composer
+
+The package is not published on Packagist yet, so register the Git repository
+first and then require it:
+
+```bash
+composer config repositories.vdsina-php-sdk vcs https://github.com/alexxxst/vdsina-php-sdk
+composer require vdsina/php-sdk:dev-main
+```
+
+The same can be done by adding this to your `composer.json`:
+
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/alexxxst/vdsina-php-sdk" }
+    ],
+    "require": {
+        "vdsina/php-sdk": "dev-main"
+    }
+}
+```
+
+Once the package is published on Packagist and a stable tag is available, the
+plain command works as usual:
+
 ```bash
 composer require vdsina/php-sdk
 ```
 
-Or, since the SDK has zero third-party dependencies, just copy the `src/`
-directory into your project and load the classes with any PSR-4 autoloader:
+### Manual (no Composer)
+
+Since the SDK has zero third-party dependencies, copy the `src/` directory into
+your project and register the `Vdsina\` namespace with any PSR-4 autoloader, for
+example:
+
+```json
+{
+    "autoload": {
+        "psr-4": {
+            "Vdsina\\": "path/to/src/"
+        }
+    }
+}
+```
+
+or plain PHP:
 
 ```php
-require 'vendor/autoload.php'; // or your own autoloader
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'Vdsina\\';
+    if (str_starts_with($class, $prefix)) {
+        require __DIR__ . '/path/to/src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+    }
+});
 ```
 
 ## Quick start
