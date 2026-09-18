@@ -1,6 +1,4 @@
 <?php
-/** @noinspection GrazieStyle */
-/** @noinspection SpellCheckingInspection */
 /** @noinspection DuplicatedCode */
 
 declare(strict_types=1);
