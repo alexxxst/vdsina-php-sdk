@@ -10,13 +10,22 @@
         "ext-curl": "*",
         "ext-json": "*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
     "autoload": {
         "psr-4": {
             "Vdsina\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Vdsina\\Tests\\": "tests/"
+        }
+    },
     "scripts": {
-        "lint": "php -l src/Client.php && php -l src/ApiException.php"
+        "test": "phpunit",
+        "lint": "find src tests examples -name '*.php' -print0 | xargs -0 -n1 php -l"
     },
     "minimum-stability": "stable"
 }
