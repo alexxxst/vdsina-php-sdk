@@ -8,12 +8,12 @@ surface using only `curl` + `json` extensions and requires **PHP 8.0+**.
 
 ### Composer
 
-The package is not published on Packagist yet, so register the Git repository
-first and then require it:
+The package is not published on Packagist yet. Register the Git repository
+first, then require the current stable tag:
 
 ```bash
 composer config repositories.vdsina-php-sdk vcs https://github.com/alexxxst/vdsina-php-sdk
-composer require vdsina/php-sdk:dev-main
+composer require vdsina/php-sdk:^1.2
 ```
 
 The same can be done by adding this to your `composer.json`:
@@ -24,13 +24,14 @@ The same can be done by adding this to your `composer.json`:
         { "type": "vcs", "url": "https://github.com/alexxxst/vdsina-php-sdk" }
     ],
     "require": {
-        "vdsina/php-sdk": "dev-main"
+        "vdsina/php-sdk": "^1.2"
     }
 }
 ```
 
-Once the package is published on Packagist and a stable tag is available, the
-plain command works as usual:
+Tags are cut on `main` (the latest is `v1.2.0`); `dev-main` always tracks the
+development branch. Once the package is published on Packagist, the plain
+command works as usual and the VCS registration above is no longer needed:
 
 ```bash
 composer require vdsina/php-sdk
