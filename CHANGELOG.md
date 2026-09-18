@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. The format is based
 on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.0] - 2026-09-18
+
+### Added
+- `Vdsina\Transport\TransportInterface` — minimal HTTP transport abstraction.
+- `Vdsina\Transport\CurlTransport` — default cURL implementation; owns host,
+  API version, scheme, timeout, User-Agent and extra cURL options.
+- `Vdsina\Transport\Response` — immutable raw response DTO.
+- `Vdsina\Transport\TransportException` — thrown on network/configuration
+  failures; extends `ApiException`, so existing `catch (ApiException)` works.
+- PHPUnit test suite (`tests/`), `phpunit.xml`, and `composer test` / `composer lint`
+  scripts.
+
+### Changed
+- `Client` now takes a `TransportInterface` and a token:
+  `new Client(new CurlTransport(), $token)`. Connection settings moved from the
+  `Client` constructor to `CurlTransport`.
+- Empty/204 responses now return `null` instead of failing JSON decoding.
+- `Vdsina\ApiException` is no longer `final` (so `TransportException` can extend it).
+
 ## [1.1.0] - 2026-09-15
 
 ### Added

@@ -72,19 +72,22 @@ require 'vendor/autoload.php';
 
 use Vdsina\Client;
 use Vdsina\ApiException;
+use Vdsina\Transport\CurlTransport;
 
 // The token is obtained in the control panel (Account information).
-$api = new Client('your-api-token');
+$api = new Client(new CurlTransport(), 'your-api-token');
 
-// Optional configuration (all shown with their defaults):
+// Optional: configure the transport (all shown with their defaults):
 $api = new Client(
-    'your-api-token',
-    'userapi.vdsina.com',   // host — a hostname or a full URL (a path in the host is used as the complete base)
-    'v1',                  // API version (not appended when the host already contains a path)
-    'https',               // scheme used when the host has none
-    30,                    // timeout (seconds)
-    'vdsina-php-sdk/1.1.0',// User-Agent (Client::DEFAULT_USER_AGENT)
-    []                     // extra cURL options (proxy, SSL flags, ...); merged over the defaults
+    new CurlTransport(
+        'userapi.vdsina.com',        // host — a hostname or a full URL (a path in the host is used as the complete base)
+        'v1',                        // API version (not appended when the host already contains a path)
+        'https',                     // scheme used when the host has none
+        30,                          // timeout (seconds)
+        Client::DEFAULT_USER_AGENT,  // User-Agent
+        []                           // extra cURL options (proxy, SSL flags, ...)
+    ),
+    'your-api-token'                 // Permanent API token
 );
 
 try {
@@ -111,13 +114,55 @@ try {
 - **Errors** — any failure (transport, malformed JSON, API logical error, or
   non-2xx HTTP status) is thrown as `Vdsina\ApiException`, carrying the HTTP
   status code and the parsed `status_msg` / `description` / `data` fields.
+  Network/configuration failures are thrown as `Vdsina\Transport\TransportException`,
+  which extends `ApiException`, so a single `catch (ApiException)` still works.
 - **Field names** — request/response field names match the OpenAPI schema
   exactly, including hyphenated names (`server-plan`, `ssh-key`, `ip-reserve`).
   PHP method arguments use camelCase and are mapped internally.
 - **Nothing is hard-coded** — host, API version, scheme, timeout, User-Agent
-  and extra cURL options are all configurable via the constructor.
-- **Transport** — compressed responses (`gzip` / `deflate`) are negotiated and
-  decompressed by cURL transparently.
+  and extra cURL options are all configurable via `CurlTransport`.
+
+## Transport
+
+`Client` performs every call through a `Vdsina\Transport\TransportInterface`.
+The bundled `CurlTransport` is the default implementation; it owns the host,
+API version, scheme, timeout, User-Agent and extra cURL options, and returns a
+raw `Vdsina\Transport\Response` (status code + body) without interpreting it.
+
+This makes the client easy to test and to plug into any HTTP stack — implement
+the two-method interface and inject it:
+
+```php
+use Vdsina\Client;
+use Vdsina\Transport\Response;
+use Vdsina\Transport\TransportInterface;
+
+$transport = new class implements TransportInterface {
+    public function send(string $method, string $url, array $headers = [], ?string $body = null): Response
+    {
+        // Call any HTTP client you like and map the result to a Response.
+        return new Response(200, [], '{"status":"ok","data":{"real":"0","bonus":"0","partner":"0"}}');
+    }
+
+    public function baseUrl(): string
+    {
+        return 'https://userapi.vdsina.com/v1';
+    }
+};
+
+$api = new Client($transport, 'your-api-token');
+```
+
+Compressed responses (`gzip` / `deflate`) are negotiated and decompressed by
+`CurlTransport` transparently.
+
+## Testing
+
+```bash
+composer install
+composer test    # PHPUnit
+composer lint    # php -l over src, tests and examples
+```
 
 ## Method reference
 

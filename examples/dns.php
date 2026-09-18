@@ -12,13 +12,14 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Vdsina\ApiException;
 use Vdsina\Client;
+use Vdsina\Transport\CurlTransport;
 
 if ($argc < 2) {
     fwrite(STDERR, "Usage: php dns.php <API_TOKEN>\n");
     exit(1);
 }
 
-$api = new Client($argv[1]);
+$api = new Client(new CurlTransport(), $argv[1]);
 
 try {
     // Create a DNS service (domain) and get its ID.
