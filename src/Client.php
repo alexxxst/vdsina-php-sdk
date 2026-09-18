@@ -8,13 +8,16 @@ declare(strict_types=1);
 namespace Vdsina;
 
 use JsonException;
+use Vdsina\Transport\CurlTransport;
+use Vdsina\Transport\TransportInterface;
 
 /**
  * VDSina public API client (https://userapi.vdsina.com).
  *
  * A compact, dependency-free SDK (cURL + JSON) that covers the whole public
- * API surface. The target host and API version are configurable through the
- * constructor, nothing is hard-coded.
+ * API surface. All HTTP transport concerns live behind
+ * {@see TransportInterface}; the default {@see CurlTransport} is configured
+ * with the target host and API version, nothing is hard-coded.
  *
  * Conventions
  * -----------
@@ -32,7 +35,7 @@ use JsonException;
  *
  * Usage
  * -----
- *   $api = new Vdsina\Client('your-api-token');
+ *   $api = new Vdsina\Client(new Vdsina\Transport\CurlTransport(), 'your-api-token');
  *   $account = $api->getAccount();
  */
 class Client
@@ -40,39 +43,12 @@ class Client
     /**
      * SDK version.
      */
-    public const VERSION = '1.1.0';
+    public const VERSION = '1.2.0';
 
     /**
      * Default User-Agent header value.
      */
     public const DEFAULT_USER_AGENT = 'vdsina-php-sdk/' . self::VERSION;
-
-    /**
-     * API bearer token.
-     */
-    private string $token;
-
-    /**
-     * Base URL, e.g. "https://userapi.vdsina.com/v1".
-     */
-    private string $baseUrl;
-
-    /**
-     * Request timeout in seconds (connect + total).
-     */
-    private int $timeout;
-
-    /**
-     * User-Agent header value.
-     */
-    private string $userAgent;
-
-    /**
-     * Extra cURL options merged over the SDK defaults (user options win).
-     *
-     * @var array<int, mixed>
-     */
-    private array $curlOptions;
 
     /**
      * Decoded envelope of the most recent response (null before any call).
@@ -87,33 +63,13 @@ class Client
     private ?int $lastHttpCode = null;
 
     /**
-     * @param string $token       Permanent API token (obtained in the control panel).
-     * @param string $host        Target host, e.g. "userapi.vdsina.com". May include
-     *                            a scheme; if it does not, `$scheme` is prepended. A
-     *                            trailing "/" is stripped automatically. If the host
-     *                            already contains a path, it is used as the complete
-     *                            base URL and `$version` is not appended.
-     * @param string $version     API version prefix, default "v1".
-     * @param string $scheme      URL scheme used when `$host` has none ("https"/"http").
-     * @param int    $timeout     Request timeout in seconds.
-     * @param string $userAgent   User-Agent header.
-     * @param array<int, mixed> $curlOptions Additional cURL options (e.g. proxy, SSL
-     *                            flags); merged over the SDK defaults.
+     * @param TransportInterface $transport HTTP transport used for every call.
+     * @param string             $token     Permanent API token (obtained in the control panel).
      */
     public function __construct(
-        string $token,
-        string $host = 'userapi.vdsina.com',
-        string $version = 'v1',
-        string $scheme = 'https',
-        int $timeout = 30,
-        string $userAgent = self::DEFAULT_USER_AGENT,
-        array $curlOptions = []
+        private TransportInterface $transport,
+        private string $token
     ) {
-        $this->token = $token;
-        $this->baseUrl = $this->buildBaseUrl($host, $version, $scheme);
-        $this->timeout = $timeout;
-        $this->userAgent = $userAgent;
-        $this->curlOptions = $curlOptions;
     }
 
     /**
@@ -1790,15 +1746,15 @@ class Client
     }
 
     // ---------------------------------------------------------------------
-    // HTTP transport
+    // API request handling
     // ---------------------------------------------------------------------
 
     /**
-     * Performs an HTTP request against the API and returns the `data` member
-     * of the response envelope.
+     * Performs an API request through the configured transport and returns the
+     * `data` member of the response envelope.
      *
      * @param string         $method HTTP method (GET/POST/PUT/DELETE).
-     * @param string         $path   URL path appended to the base URL (leading "/").
+     * @param string         $path   URL path appended to the transport base URL (leading "/").
      * @param array<string, mixed> $query Query string parameters.
      * @param array<string, mixed>|null $body JSON request body.
      *
@@ -1812,7 +1768,7 @@ class Client
         $this->lastResponse = null;
         $this->lastHttpCode = null;
 
-        $url = $this->baseUrl . $path;
+        $url = $this->transport->baseUrl() . $path;
         if ($query !== []) {
             $url .= '?' . http_build_query($query);
         }
@@ -1823,32 +1779,10 @@ class Client
             'Authorization: Bearer ' . $this->token,
         ];
 
-        $options = [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => false,
-            CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_CONNECTTIMEOUT => $this->timeout,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_USERAGENT => $this->userAgent,
-            CURLOPT_ENCODING => '',
-        ];
-
-        switch ($method) {
-            case 'GET':
-                $options[CURLOPT_HTTPGET] = true;
-                break;
-            case 'POST':
-                $options[CURLOPT_POST] = true;
-                break;
-            case 'PUT':
-            case 'DELETE':
-                $options[CURLOPT_CUSTOMREQUEST] = $method;
-                break;
-        }
-
+        $encodedBody = null;
         if ($body !== null) {
             try {
-                $options[CURLOPT_POSTFIELDS] = json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                $encodedBody = json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             } catch (JsonException $e) {
                 throw new ApiException(
                     'Failed to encode request body as JSON: ' . $e->getMessage(),
@@ -1861,36 +1795,23 @@ class Client
             }
         }
 
-        // User-supplied cURL options take precedence over the SDK defaults.
-        if ($this->curlOptions !== []) {
-            $options = $this->curlOptions + $options;
-        }
+        $response = $this->transport->send($method, $url, $headers, $encodedBody);
+        $statusCode = $response->statusCode();
+        $raw = $response->body();
 
-        $ch = curl_init($url);
-        if ($ch === false) {
-            throw new ApiException('Failed to initialize cURL session', 0);
-        }
-        if (!curl_setopt_array($ch, $options)) {
-            $curlError = curl_error($ch);
-            curl_close($ch);
-            throw new ApiException('Failed to configure cURL session: ' . $curlError, 0);
-        }
+        // Endpoints without a payload (or an empty body) yield null.
+        if ($raw === '' || $statusCode === 204) {
+            $this->lastHttpCode = $statusCode;
 
-        $response = curl_exec($ch);
-        $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($response === false) {
-            throw new ApiException('cURL transport error: ' . $curlError, 0);
+            return null;
         }
 
         try {
-            $decoded = json_decode((string)$response, true, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
             throw new ApiException(
-                'Invalid JSON response from API (HTTP ' . $httpCode . '): ' . substr((string) $response, 0, 200),
-                $httpCode,
+                'Invalid JSON response from API (HTTP ' . $statusCode . '): ' . substr($raw, 0, 200),
+                $statusCode,
                 null,
                 null,
                 null,
@@ -1899,19 +1820,19 @@ class Client
         }
         if (!is_array($decoded)) {
             throw new ApiException(
-                'Invalid JSON response from API (HTTP ' . $httpCode . '): ' . substr((string) $response, 0, 200),
-                $httpCode
+                'Invalid JSON response from API (HTTP ' . $statusCode . '): ' . substr($raw, 0, 200),
+                $statusCode
             );
         }
 
         $this->lastResponse = $decoded;
-        $this->lastHttpCode = $httpCode;
+        $this->lastHttpCode = $statusCode;
 
         // API logical error (envelope status === "error").
         if (($decoded['status'] ?? null) === 'error') {
             throw new ApiException(
                 $this->formatErrorMessage($decoded),
-                $httpCode,
+                $statusCode,
                 isset($decoded['status_msg']) ? (string) $decoded['status_msg'] : null,
                 isset($decoded['description']) ? (string) $decoded['description'] : null,
                 $decoded['data'] ?? null
@@ -1919,10 +1840,10 @@ class Client
         }
 
         // Non-successful HTTP status.
-        if ($httpCode >= 400) {
+        if ($statusCode >= 400) {
             throw new ApiException(
                 $this->formatErrorMessage($decoded),
-                $httpCode,
+                $statusCode,
                 isset($decoded['status_msg']) ? (string) $decoded['status_msg'] : null,
                 isset($decoded['description']) ? (string) $decoded['description'] : null,
                 $decoded['data'] ?? null
@@ -1945,31 +1866,5 @@ class Client
         }
 
         return $message;
-    }
-
-    /**
-     * Builds the base URL from host, version and scheme, stripping any
-     * redundant slashes and honouring a scheme already present in the host.
-     *
-     * @param string $host    Target host (optionally with scheme).
-     * @param string $version API version prefix.
-     * @param string $scheme  Default scheme used when `$host` has none.
-     */
-    private function buildBaseUrl(string $host, string $version, string $scheme): string
-    {
-        $host = rtrim($host, '/');
-        if (!preg_match('~^[a-z][a-z0-9+.-]*://~i', $host)) {
-            $host = $scheme . '://' . $host;
-        }
-        $version = trim($version, '/');
-
-        // A path already present in the host is treated as the complete base,
-        // so the version prefix is not appended a second time.
-        $path = parse_url($host, PHP_URL_PATH);
-        if ($version === '' || (is_string($path) && $path !== '' && $path !== '/')) {
-            return $host;
-        }
-
-        return $host . '/' . $version;
     }
 }
