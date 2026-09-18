@@ -17,6 +17,10 @@ use Vdsina\Transport\TransportInterface;
  * {@see TransportInterface}; the default {@see CurlTransport} is configured
  * with the target host and API version, nothing is hard-coded.
  *
+ * The class is built for composition and extension: inject any
+ * {@see TransportInterface}, or subclass and override {@see request()} to
+ * customize request/response handling.
+ *
  * Conventions
  * -----------
  * - Every request is authenticated with the bearer token passed to the
@@ -41,7 +45,7 @@ class Client
     /**
      * SDK version.
      */
-    public const VERSION = '1.2.0';
+    public const VERSION = '1.2.1';
 
     /**
      * Default User-Agent header value.
@@ -53,20 +57,20 @@ class Client
      *
      * @var array<string, mixed>|null
      */
-    private ?array $lastResponse = null;
+    protected ?array $lastResponse = null;
 
     /**
      * HTTP status code of the most recent response (null before any call).
      */
-    private ?int $lastHttpCode = null;
+    protected ?int $lastHttpCode = null;
 
     /**
      * @param TransportInterface $transport HTTP transport used for every call.
      * @param string             $token     Permanent API token (obtained in the control panel).
      */
     public function __construct(
-        private TransportInterface $transport,
-        private string $token
+        protected TransportInterface $transport,
+        protected string $token
     ) {
     }
 
@@ -75,7 +79,7 @@ class Client
      *
      * @return array<string, mixed>|null
      */
-    final public function getLastResponse(): ?array
+    public function getLastResponse(): ?array
     {
         return $this->lastResponse;
     }
@@ -83,7 +87,7 @@ class Client
     /**
      * Returns the HTTP status code of the most recent API response.
      */
-    final public function getLastHttpCode(): ?int
+    public function getLastHttpCode(): ?int
     {
         return $this->lastHttpCode;
     }
@@ -91,7 +95,7 @@ class Client
     /**
      * Updates the bearer token used for subsequent requests.
      */
-    final public function setToken(string $token): self
+    public function setToken(string $token): self
     {
         $this->token = $token;
 
@@ -114,7 +118,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getAccount(): ?array
+    public function getAccount(): ?array
     {
         return $this->request('GET', '/account');
     }
@@ -126,7 +130,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getBalance(): ?array
+    public function getBalance(): ?array
     {
         return $this->request('GET', '/account.balance');
     }
@@ -150,7 +154,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getLimits(): ?array
+    public function getLimits(): ?array
     {
         return $this->request('GET', '/account.limit');
     }
@@ -168,7 +172,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function register(string $email, string $code): ?array
+    public function register(string $email, string $code): ?array
     {
         return $this->request('POST', '/register', [], [
             'email' => $email,
@@ -187,7 +191,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerGroups(): ?array
+    public function getServerGroups(): ?array
     {
         return $this->request('GET', '/server-group');
     }
@@ -199,7 +203,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getDatacenters(): ?array
+    public function getDatacenters(): ?array
     {
         return $this->request('GET', '/datacenter');
     }
@@ -222,7 +226,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getTemplates(): ?array
+    public function getTemplates(): ?array
     {
         return $this->request('GET', '/template');
     }
@@ -263,7 +267,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerPlans(int $groupId): ?array
+    public function getServerPlans(int $groupId): ?array
     {
         return $this->request('GET', '/server-plan/' . $groupId);
     }
@@ -279,7 +283,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getSshKeys(): ?array
+    public function getSshKeys(): ?array
     {
         return $this->request('GET', '/ssh-key');
     }
@@ -294,7 +298,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createSshKey(string $name, string $data): ?array
+    public function createSshKey(string $name, string $data): ?array
     {
         return $this->request('POST', '/ssh-key', [], [
             'name' => $name,
@@ -311,7 +315,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getSshKey(int $keyId): ?array
+    public function getSshKey(int $keyId): ?array
     {
         return $this->request('GET', '/ssh-key/' . $keyId);
     }
@@ -327,7 +331,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function updateSshKey(int $keyId, string $name, string $data): ?array
+    public function updateSshKey(int $keyId, string $name, string $data): ?array
     {
         return $this->request('PUT', '/ssh-key/' . $keyId, [], [
             'name' => $name,
@@ -344,7 +348,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteSshKey(int $keyId): ?array
+    public function deleteSshKey(int $keyId): ?array
     {
         return $this->request('DELETE', '/ssh-key/' . $keyId);
     }
@@ -373,7 +377,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIsos(): ?array
+    public function getIsos(): ?array
     {
         return $this->request('GET', '/iso');
     }
@@ -388,7 +392,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function downloadIso(string $url): ?array
+    public function downloadIso(string $url): ?array
     {
         return $this->request('POST', '/iso', [], ['url' => $url]);
     }
@@ -403,7 +407,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIsoDownloadStatus(string $key): ?array
+    public function getIsoDownloadStatus(string $key): ?array
     {
         return $this->request('GET', '/iso/' . $key);
     }
@@ -417,7 +421,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createIso(string $key): ?array
+    public function createIso(string $key): ?array
     {
         return $this->request('POST', '/iso/' . $key);
     }
@@ -444,7 +448,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIso(int $isoId): ?array
+    public function getIso(int $isoId): ?array
     {
         return $this->request('GET', '/iso/' . $isoId);
     }
@@ -458,7 +462,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteIso(int $isoId): ?array
+    public function deleteIso(int $isoId): ?array
     {
         return $this->request('DELETE', '/iso/' . $isoId);
     }
@@ -488,7 +492,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServers(): ?array
+    public function getServers(): ?array
     {
         return $this->request('GET', '/server');
     }
@@ -517,7 +521,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createServer(
+    public function createServer(
         int $datacenter,
         int $serverPlan,
         ?string $name = null,
@@ -625,7 +629,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServer(int $serverId): ?array
+    public function getServer(int $serverId): ?array
     {
         return $this->request('GET', '/server/' . $serverId);
     }
@@ -643,7 +647,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function updateServer(
+    public function updateServer(
         int $serverId,
         string $name,
         ?string $autoprolong = null,
@@ -673,7 +677,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteServer(int $serverId): ?array
+    public function deleteServer(int $serverId): ?array
     {
         return $this->request('DELETE', '/server/' . $serverId);
     }
@@ -688,7 +692,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function rebootServer(int $serverId, ?string $type = null): ?array
+    public function rebootServer(int $serverId, ?string $type = null): ?array
     {
         $body = $type === null ? null : ['type' => $type];
 
@@ -707,7 +711,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function reinstallServer(int $serverId, ?int $template = null, ?int $sshKey = null, ?string $host = null): ?array
+    public function reinstallServer(int $serverId, ?int $template = null, ?int $sshKey = null, ?string $host = null): ?array
     {
         $body = [];
         if ($template !== null) {
@@ -736,7 +740,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerPassword(int $serverId): ?array
+    public function getServerPassword(int $serverId): ?array
     {
         return $this->request('GET', '/server.password/' . $serverId);
     }
@@ -754,7 +758,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function setServerPassword(int $serverId, string $password): ?array
+    public function setServerPassword(int $serverId, string $password): ?array
     {
         return $this->request('PUT', '/server.password/' . $serverId, [], ['password' => $password]);
     }
@@ -773,7 +777,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function changeServerPlan(
+    public function changeServerPlan(
         int $serverId,
         int $serverPlan,
         ?int $cpu = null,
@@ -807,7 +811,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function prolongServer(int $serverId): ?array
+    public function prolongServer(int $serverId): ?array
     {
         return $this->request('PUT', '/server.prolong/' . $serverId);
     }
@@ -824,7 +828,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function attachServerIso(int $serverId, int $iso): ?array
+    public function attachServerIso(int $serverId, int $iso): ?array
     {
         return $this->request('PUT', '/server.iso/' . $serverId, [], ['iso' => $iso]);
     }
@@ -840,7 +844,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function detachServerIso(int $serverId): ?array
+    public function detachServerIso(int $serverId): ?array
     {
         return $this->request('DELETE', '/server.iso/' . $serverId);
     }
@@ -867,7 +871,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerStats(int $serverId, ?string $from = null, ?string $to = null): ?array
+    public function getServerStats(int $serverId, ?string $from = null, ?string $to = null): ?array
     {
         $query = [];
         if ($from !== null) {
@@ -904,7 +908,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getBackups(): ?array
+    public function getBackups(): ?array
     {
         return $this->request('GET', '/backup');
     }
@@ -931,7 +935,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getBackup(int $backupId): ?array
+    public function getBackup(int $backupId): ?array
     {
         return $this->request('GET', '/backup/' . $backupId);
     }
@@ -947,7 +951,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function updateBackup(int $backupId, string $name, ?string $autoprolong = null): ?array
+    public function updateBackup(int $backupId, string $name, ?string $autoprolong = null): ?array
     {
         $body = ['name' => $name];
         if ($autoprolong !== null) {
@@ -966,7 +970,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteBackup(int $backupId): ?array
+    public function deleteBackup(int $backupId): ?array
     {
         return $this->request('DELETE', '/backup/' . $backupId);
     }
@@ -980,7 +984,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createBackup(int $serviceId): ?array
+    public function createBackup(int $serviceId): ?array
     {
         return $this->request('POST', '/backup/' . $serviceId);
     }
@@ -995,7 +999,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function restoreBackup(int $backupId, int $service): ?array
+    public function restoreBackup(int $backupId, int $service): ?array
     {
         return $this->request('PUT', '/backup.restore/' . $backupId, [], ['service' => $service]);
     }
@@ -1010,7 +1014,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function copyBackup(int $backupId, int $datacenter): ?array
+    public function copyBackup(int $backupId, int $datacenter): ?array
     {
         return $this->request('POST', '/backup.copy/' . $backupId, [], ['datacenter' => $datacenter]);
     }
@@ -1032,7 +1036,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getBackupSchedule(int $serviceId): ?array
+    public function getBackupSchedule(int $serviceId): ?array
     {
         return $this->request('GET', '/backup.schedule/' . $serviceId);
     }
@@ -1051,7 +1055,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createBackupSchedule(int $serviceId, array $schedule): ?array
+    public function createBackupSchedule(int $serviceId, array $schedule): ?array
     {
         return $this->request('POST', '/backup.schedule/' . $serviceId, [], $schedule);
     }
@@ -1067,7 +1071,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteBackupSchedule(int $serviceId, ?string $type = null): ?array
+    public function deleteBackupSchedule(int $serviceId, ?string $type = null): ?array
     {
         $query = $type === null ? [] : ['type' => $type];
 
@@ -1087,7 +1091,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerLocalIp(int $serverId): ?array
+    public function getServerLocalIp(int $serverId): ?array
     {
         return $this->request('GET', '/server.ip.local/' . $serverId);
     }
@@ -1101,7 +1105,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createServerLocalIp(int $serverId): ?array
+    public function createServerLocalIp(int $serverId): ?array
     {
         return $this->request('POST', '/server.ip.local/' . $serverId);
     }
@@ -1115,7 +1119,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteServerLocalIp(int $serverId): ?array
+    public function deleteServerLocalIp(int $serverId): ?array
     {
         return $this->request('DELETE', '/server.ip.local/' . $serverId);
     }
@@ -1141,7 +1145,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIps(): ?array
+    public function getIps(): ?array
     {
         return $this->request('GET', '/ip');
     }
@@ -1165,7 +1169,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIp(int $ipId): ?array
+    public function getIp(int $ipId): ?array
     {
         return $this->request('GET', '/ip/' . $ipId);
     }
@@ -1188,7 +1192,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getIpPtrRecords(int $ipId): ?array
+    public function getIpPtrRecords(int $ipId): ?array
     {
         return $this->request('GET', '/ip.ptr/' . $ipId);
     }
@@ -1204,7 +1208,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createIpPtrRecord(int $ipId, string $ip, string $host): ?array
+    public function createIpPtrRecord(int $ipId, string $ip, string $host): ?array
     {
         return $this->request('POST', '/ip.ptr/' . $ipId, [], [
             'ip' => $ip,
@@ -1222,7 +1226,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function updateIpPtrRecord(int $ptrId, string $host): ?array
+    public function updateIpPtrRecord(int $ptrId, string $host): ?array
     {
         return $this->request('PUT', '/ip.ptr/' . $ptrId, [], ['host' => $host]);
     }
@@ -1236,7 +1240,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteIpPtrRecord(int $ptrId): ?array
+    public function deleteIpPtrRecord(int $ptrId): ?array
     {
         return $this->request('DELETE', '/ip.ptr/' . $ptrId);
     }
@@ -1265,7 +1269,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getReservedIpServices(): ?array
+    public function getReservedIpServices(): ?array
     {
         return $this->request('GET', '/ip-reserve');
     }
@@ -1292,7 +1296,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getReservedIpService(int $serviceId): ?array
+    public function getReservedIpService(int $serviceId): ?array
     {
         return $this->request('GET', '/ip-reserve/' . $serviceId);
     }
@@ -1306,7 +1310,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteReservedIpService(int $serviceId): ?array
+    public function deleteReservedIpService(int $serviceId): ?array
     {
         return $this->request('DELETE', '/ip-reserve/' . $serviceId);
     }
@@ -1335,7 +1339,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getAdditionalIpServices(): ?array
+    public function getAdditionalIpServices(): ?array
     {
         return $this->request('GET', '/server-ip');
     }
@@ -1362,7 +1366,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getServerIps(int $serverId): ?array
+    public function getServerIps(int $serverId): ?array
     {
         return $this->request('GET', '/server.ip/' . $serverId);
     }
@@ -1378,7 +1382,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function orderServerIps(int $serverId, string $type, int $count): ?array
+    public function orderServerIps(int $serverId, string $type, int $count): ?array
     {
         return $this->request('POST', '/server.ip/' . $serverId, [], [
             'type' => $type,
@@ -1397,7 +1401,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteServerIps(int $serverId, string $type, array $delete): ?array
+    public function deleteServerIps(int $serverId, string $type, array $delete): ?array
     {
         return $this->request('PUT', '/server.ip/' . $serverId, [], [
             'type' => $type,
@@ -1427,7 +1431,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getAdditionalIpService(int $serviceId): ?array
+    public function getAdditionalIpService(int $serviceId): ?array
     {
         return $this->request('GET', '/server-ip/' . $serviceId);
     }
@@ -1442,7 +1446,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteAdditionalIpServiceAddresses(int $serviceId, array $delete): ?array
+    public function deleteAdditionalIpServiceAddresses(int $serviceId, array $delete): ?array
     {
         return $this->request('PUT', '/server-ip/' . $serviceId, [], ['delete' => $delete]);
     }
@@ -1458,7 +1462,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteAdditionalIpService(int $serviceId): ?array
+    public function deleteAdditionalIpService(int $serviceId): ?array
     {
         return $this->request('DELETE', '/server-ip/' . $serviceId);
     }
@@ -1485,7 +1489,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getDnsServices(): ?array
+    public function getDnsServices(): ?array
     {
         return $this->request('GET', '/dns');
     }
@@ -1500,7 +1504,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createDnsService(string $name, ?string $ip = null): ?array
+    public function createDnsService(string $name, ?string $ip = null): ?array
     {
         $body = ['name' => $name];
         if ($ip !== null) {
@@ -1530,7 +1534,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getDnsService(int $serviceId): ?array
+    public function getDnsService(int $serviceId): ?array
     {
         return $this->request('GET', '/dns/' . $serviceId);
     }
@@ -1544,7 +1548,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteDnsService(int $serviceId): ?array
+    public function deleteDnsService(int $serviceId): ?array
     {
         return $this->request('DELETE', '/dns/' . $serviceId);
     }
@@ -1567,7 +1571,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getDnsRecords(int $serviceId): ?array
+    public function getDnsRecords(int $serviceId): ?array
     {
         return $this->request('GET', '/dns.record/' . $serviceId);
     }
@@ -1586,7 +1590,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createDnsRecord(
+    public function createDnsRecord(
         int $serviceId,
         string $host,
         string $type,
@@ -1621,7 +1625,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function updateDnsRecord(int $recordId, string $value, ?string $priority = null, ?string $tag = null): ?array
+    public function updateDnsRecord(int $recordId, string $value, ?string $priority = null, ?string $tag = null): ?array
     {
         $body = ['value' => $value];
         if ($priority !== null) {
@@ -1643,7 +1647,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteDnsRecord(int $recordId): ?array
+    public function deleteDnsRecord(int $recordId): ?array
     {
         return $this->request('DELETE', '/dns.record/' . $recordId);
     }
@@ -1675,7 +1679,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getOperations(?string $from = null, ?string $to = null): ?array
+    public function getOperations(?string $from = null, ?string $to = null): ?array
     {
         $query = [];
         if ($from !== null) {
@@ -1697,7 +1701,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function createOperation(float $summ): ?array
+    public function createOperation(float $summ): ?array
     {
         return $this->request('POST', '/operation', [], ['summ' => $summ]);
     }
@@ -1724,7 +1728,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function getOperation(int $operationId): ?array
+    public function getOperation(int $operationId): ?array
     {
         return $this->request('GET', '/operation/' . $operationId);
     }
@@ -1738,7 +1742,7 @@ class Client
      *
      * @throws ApiException
      */
-    final public function deleteOperation(int $operationId): ?array
+    public function deleteOperation(int $operationId): ?array
     {
         return $this->request('DELETE', '/operation/' . $operationId);
     }
@@ -1761,7 +1765,7 @@ class Client
      * @throws ApiException On transport errors, malformed responses, HTTP errors
      *                      (>= 400) and API logical errors (status === "error").
      */
-    private function request(string $method, string $path, array $query = [], ?array $body = null): ?array
+    protected function request(string $method, string $path, array $query = [], ?array $body = null): ?array
     {
         $this->lastResponse = null;
         $this->lastHttpCode = null;
@@ -1796,6 +1800,16 @@ class Client
         $response = $this->transport->send($method, $url, $headers, $encodedBody);
         $statusCode = $response->statusCode();
         $raw = $response->body();
+
+        // A non-2xx status is an error even when the body is empty.
+        if ($statusCode >= 400 && $raw === '') {
+            $this->lastHttpCode = $statusCode;
+
+            throw new ApiException(
+                'API error (HTTP ' . $statusCode . '): empty response body',
+                $statusCode
+            );
+        }
 
         // Endpoints without a payload (or an empty body) yield null.
         if ($raw === '' || $statusCode === 204) {
@@ -1856,7 +1870,7 @@ class Client
      *
      * @param array<string, mixed> $decoded Decoded API error response.
      */
-    private function formatErrorMessage(array $decoded): string
+    protected function formatErrorMessage(array $decoded): string
     {
         $message = isset($decoded['status_msg']) ? (string) $decoded['status_msg'] : 'API error';
         if (!empty($decoded['description'])) {

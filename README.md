@@ -157,6 +157,9 @@ $api = new Client($transport, 'your-api-token');
 Compressed responses (`gzip` / `deflate`) are negotiated and decompressed by
 `CurlTransport` transparently.
 
+If you need to customize request/response handling itself (rather than just the
+HTTP layer), subclass `Client` and override the protected `request()` method.
+
 ## Testing
 
 ```bash

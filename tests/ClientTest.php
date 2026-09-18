@@ -122,6 +122,50 @@ final class ClientTest extends TestCase
         self::assertNull($client->deleteServer(3));
     }
 
+    public function testEmptyErrorResponseThrows(): void
+    {
+        $transport = new FakeTransport([new Response(500, [], '')]);
+        $client = new Client($transport, 't');
+
+        try {
+            $client->getAccount();
+            self::fail('Expected ApiException');
+        } catch (ApiException $e) {
+            self::assertSame(500, $e->getStatusCode());
+            self::assertStringContainsString('500', $e->getMessage());
+        }
+    }
+
+    public function testEmptyForbiddenResponseThrows(): void
+    {
+        $transport = new FakeTransport([new Response(403, [], '')]);
+        $client = new Client($transport, 't');
+
+        $this->expectException(ApiException::class);
+        $client->getAccount();
+    }
+
+    public function testOkEmptyBodyReturnsNull(): void
+    {
+        $transport = new FakeTransport([new Response(200, [], '')]);
+        $client = new Client($transport, 't');
+
+        self::assertNull($client->deleteServer(3));
+    }
+
+    public function testClientCanBeExtended(): void
+    {
+        $transport = new FakeTransport();
+        $client = new class ($transport, 't') extends Client {
+            protected function request(string $method, string $path, array $query = [], ?array $body = null): ?array
+            {
+                return ['overridden' => true];
+            }
+        };
+
+        self::assertSame(['overridden' => true], $client->getAccount());
+    }
+
     public function testSetTokenUpdatesAuthorizationHeader(): void
     {
         $transport = new FakeTransport([$this->json(200, '{"status":"ok","data":[]}')]);

@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format is based
 on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.1] - 2026-09-18
+
+### Fixed
+- Empty response bodies with a non-2xx status (e.g. `403`, `500`, `502` returned
+  by a proxy) now throw `ApiException` instead of silently returning `null`,
+  matching the documented contract.
+
+### Changed
+- `Client` is now designed for extension: all public methods are no longer
+  `final`, `request()` / `formatErrorMessage()` are `protected`, and the
+  `$transport` / `$token` / `$lastResponse` / `$lastHttpCode` properties are
+  `protected`.
+
 ## [1.2.0] - 2026-09-18
 
 ### Added
