@@ -14,7 +14,7 @@ use Throwable;
  * The exception carries the parsed error details from the API envelope
  * (`status_msg`, `description`, `data`) so callers can react precisely.
  */
-final class ApiException extends RuntimeException
+class ApiException extends RuntimeException
 {
     /**
      * HTTP status code of the failed response (null when the error is
