@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The format is based
 on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [1.3.0] - 2026-09-18
+## [1.3.0] - 2026-09-24
 
 ### Added
 - `downloadBackup()` — queues downloading a backup as a gzip-archive of the RAW
