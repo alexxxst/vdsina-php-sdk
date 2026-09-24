@@ -13,7 +13,7 @@ first, then require the current stable tag:
 
 ```bash
 composer config repositories.vdsina-php-sdk vcs https://github.com/alexxxst/vdsina-php-sdk
-composer require vdsina/php-sdk:^1.2
+composer require vdsina/php-sdk:^1.3
 ```
 
 The same can be done by adding this to your `composer.json`:
@@ -24,12 +24,12 @@ The same can be done by adding this to your `composer.json`:
         { "type": "vcs", "url": "https://github.com/alexxxst/vdsina-php-sdk" }
     ],
     "require": {
-        "vdsina/php-sdk": "^1.2"
+        "vdsina/php-sdk": "^1.3"
     }
 }
 ```
 
-Tags are cut on `main` (the latest is `v1.2.0`); `dev-main` always tracks the
+Tags are cut on `main` (the latest is `v1.3.0`); `dev-main` always tracks the
 development branch. Once the package is published on Packagist, the plain
 command works as usual and the VCS registration above is no longer needed:
 
@@ -120,6 +120,8 @@ try {
 - **Field names** — request/response field names match the OpenAPI schema
   exactly, including hyphenated names (`server-plan`, `ssh-key`, `ip-reserve`).
   PHP method arguments use camelCase and are mapped internally.
+- **Schema version** — the SDK tracks the VDSina OpenAPI schema **1.4.0**
+  (bundled as `openapi.yaml`); endpoint coverage and response shapes follow it.
 - **Nothing is hard-coded** — host, API version, scheme, timeout, User-Agent
   and extra cURL options are all configurable via `CurlTransport`.
 
