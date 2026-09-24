@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format is based
 on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.3.0] - 2026-09-18
+
+### Added
+- `downloadBackup()` — queues downloading a backup as a gzip-archive of the RAW
+  disk image (`PUT /backup.download/{backupID}`).
+- `download` field (`{link, end}`) in the `Backup` response shape, used by
+  `getBackups()` and `getBackup()`.
+- `currency` field in the `getBalance()` response shape.
+
+### Changed
+- Aligned with the OpenAPI schema **1.4.0**: operation responses now return
+  HTTP `202` with reworded `status_msg` strings (handled transparently, any
+  `2xx` is accepted). `openapi.yaml` updated to 1.4.0.
+
 ## [1.2.1] - 2026-09-18
 
 ### Fixed

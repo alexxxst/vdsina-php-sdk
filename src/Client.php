@@ -45,7 +45,7 @@ class Client
     /**
      * SDK version.
      */
-    public const VERSION = '1.2.1';
+    public const VERSION = '1.3.0';
 
     /**
      * Default User-Agent header value.
@@ -126,7 +126,7 @@ class Client
     /**
      * Account balances (GET /account.balance).
      *
-     * @return array{real: string, bonus: string, partner: string}|null
+     * @return array{real: string, bonus: string, partner: string, currency: string}|null
      *
      * @throws ApiException
      */
@@ -903,6 +903,7 @@ class Client
      *     status_text: string,
      *     datacenter: array{id: int, name: string, country: string},
      *     server: array{id: int, name: string}|null,
+     *     download: array{link: string, end: string}|null,
      *     can: array{update: bool, prolong: bool, delete: bool}
      * }>|null
      *
@@ -930,6 +931,7 @@ class Client
      *     status_text: string,
      *     datacenter: array{id: int, name: string, country: string},
      *     server: array{id: int, name: string}|null,
+     *     download: array{link: string, end: string}|null,
      *     can: array{update: bool, prolong: bool, delete: bool}
      * }|null
      *
@@ -1017,6 +1019,24 @@ class Client
     public function copyBackup(int $backupId, int $datacenter): ?array
     {
         return $this->request('POST', '/backup.copy/' . $backupId, [], ['datacenter' => $datacenter]);
+    }
+
+    /**
+     * Queues a backup download as a gzip-archive of the RAW disk image
+     * (PUT /backup.download/{backupID}).
+     *
+     * The download link then becomes available in the backup information
+     * (`download` property) and stays valid for 24 hours.
+     *
+     * @param int $backupId Backup ID.
+     *
+     * @return array|null
+     *
+     * @throws ApiException
+     */
+    public function downloadBackup(int $backupId): ?array
+    {
+        return $this->request('PUT', '/backup.download/' . $backupId);
     }
 
     // ---------------------------------------------------------------------

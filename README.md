@@ -233,6 +233,7 @@ composer lint    # php -l over src, tests and examples
 | `createBackup(int $serviceId)` | `POST /backup/{serviceID}` |
 | `restoreBackup(int $backupId, int $service)` | `PUT /backup.restore/{backupID}` |
 | `copyBackup(int $backupId, int $datacenter)` | `POST /backup.copy/{backupID}` |
+| `downloadBackup(int $backupId)` | `PUT /backup.download/{backupID}` |
 
 ### Backup schedules
 | Method | HTTP |

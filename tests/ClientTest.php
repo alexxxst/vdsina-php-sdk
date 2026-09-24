@@ -166,6 +166,16 @@ final class ClientTest extends TestCase
         self::assertSame(['overridden' => true], $client->getAccount());
     }
 
+    public function testDownloadBackupUsesPut(): void
+    {
+        $transport = new FakeTransport([new Response(202, [], '')]);
+        $client = new Client($transport, 't');
+
+        self::assertNull($client->downloadBackup(42));
+        self::assertSame('PUT', $transport->requests[0]['method']);
+        self::assertSame('https://userapi.vdsina.com/v1/backup.download/42', $transport->requests[0]['url']);
+    }
+
     public function testSetTokenUpdatesAuthorizationHeader(): void
     {
         $transport = new FakeTransport([$this->json(200, '{"status":"ok","data":[]}')]);
